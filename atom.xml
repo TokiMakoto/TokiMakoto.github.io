@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2025-11-02T06:52:20.634Z</updated>
+  <updated>2026-01-01T08:40:35.845Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,32 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>千年战争aigis个人日记（2026）</title>
+    <link href="http://example.com/2026/01/01/20260101-%E5%8D%83%E5%B9%B4%E6%88%98%E4%BA%89aigis%E4%B8%AA%E4%BA%BA%E6%97%A5%E8%AE%B0(2026)%20-%20%E5%89%AF%E6%9C%AC/"/>
+    <id>http://example.com/2026/01/01/20260101-%E5%8D%83%E5%B9%B4%E6%88%98%E4%BA%89aigis%E4%B8%AA%E4%BA%BA%E6%97%A5%E8%AE%B0(2026)%20-%20%E5%89%AF%E6%9C%AC/</id>
+    <published>2025-12-31T16:00:00.000Z</published>
+    <updated>2026-01-01T08:40:35.845Z</updated>
+    
+    <content type="html"><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="\assets\js\Meting.min.js"></script><h4 id="2026年1月"><a href="#2026年1月" class="headerlink" title="2026年1月"></a>2026年1月</h4><hr><p>第一周：</p><p><a href="https://tokimakoto.top/2024/11/18/20241118-%E5%8D%83%E5%B9%B4%E6%88%98%E4%BA%89aigis%E4%B8%AA%E4%BA%BA%E6%97%A5%E8%AE%B0/">上个帖子</a>的图片太多了，于是今年新开一贴</p><p><img src="https://s2.loli.net/2026/01/01/OTLA3jQNJqlYyPn.webp" ></a></p>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;link rel=&quot;stylesheet&quot; class=&quot;aplayer-secondary-style-marker&quot; href=&quot;&#92;assets&#92;css&#92;APlayer.min.css&quot;&gt;&lt;script src=&quot;&#92;assets&#92;js&#92;APlayer.min.js&quot; cla</summary>
+      
+    
+    
+    
+    <category term="游戏" scheme="http://example.com/categories/%E6%B8%B8%E6%88%8F/"/>
+    
+    
+    <category term="游戏" scheme="http://example.com/tags/%E6%B8%B8%E6%88%8F/"/>
+    
+    <category term="千年战争aigis" scheme="http://example.com/tags/%E5%8D%83%E5%B9%B4%E6%88%98%E4%BA%89aigis/"/>
+    
+  </entry>
   
   <entry>
     <title>百合推理：《魔法少女ノ魔女裁判》</title>
