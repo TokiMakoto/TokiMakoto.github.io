@@ -1,73 +1,58 @@
-/* 修复手机端顶部图裁切问题 */
-@media (max-width: 768px) {
-  /* 首页顶部图容器 */
-  #page-header.full_page {
-    /* 保持覆盖容器，不拉伸 */
-    background-size: contain !important;
-    /* 关键：禁止裁切，完整显示图片 */
-    background-repeat: no-repeat !important;
-    /* 居中对齐，留白均匀分布 */
-    background-position: center center !important;
-    /* 搭配博客背景色填充留白，更协调 */
-    background-color: #1a1a1a !important; 
-  }
-}
-
-/* ========== 核心：固定顶部图，滑动不跟随 ========== */
+/* ========== 核心：固定顶部图 + 完整显示 ========== */
 #page-header.full_page {
   position: fixed !important;    /* 固定定位，不随滚动移动 */
   top: 0 !important;             /* 固定在视口顶部 */
   left: 0 !important;            /* 左右铺满 */
   right: 0 !important;
-  z-index: 99 !important;        /* 保证在页面内容上方，不被遮挡 */
+  z-index: 99 !important;        /* 保证层级，不被遮挡 */
+  /* 关键：让容器高度自适应图片，不再固定高度限制 */
+  height: auto !important;
+  min-height: 100vh !important;  /* 保证容器至少占满视口高度 */
+  background-size: contain !important; /* 强制完整显示图片 */
+  background-repeat: no-repeat !important;
+  background-position: center top !important; /* 图片靠上居中，避免留白在顶部 */
+  background-color: #1a1a1a !important; /* 背景色填充留白 */
 }
 
-/* 调整页面主体位置，避免内容被固定的顶部图遮挡 */
+/* 调整页面主体位置，避免被固定的顶部图遮挡 */
 #content-inner {
-  margin-top: 550px !important;  /* 初始值适配电脑端，移动端会覆盖 */
+  /* 主体内容放在顶部图下方，通过padding-top适配 */
+  padding-top: 100vh !important; /* 等于视口高度，保证在顶部图下方 */
+  margin-top: 0 !important;      /* 清空之前的margin，避免重复留白 */
 }
 
-/* ========== 多端适配：首页顶部图（index_img） ========== */
-
-/* 1. 手机端（宽度 ≤ 768px）- 完整显示图片，无裁切 */
+/* ========== 多端细节优化 ========== */
+/* 1. 手机端（宽度 ≤ 768px） */
 @media (max-width: 768px) {
   #page-header.full_page {
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center center !important;
-    background-color: #1a1a1a !important;
-    height: 320px !important;    /* 手机端容器高度 */
+    background-position: center center !important; /* 手机端居中显示 */
   }
-  /* 适配手机端主体margin，避免遮挡 */
   #content-inner {
-    margin-top: 320px !important;
+    padding-top: 100vh !important; /* 适配手机视口高度 */
   }
 }
 
-/* 2. 平板端（769px ≤ 宽度 ≤ 1024px）- 平衡显示与裁切 */
+/* 2. 平板端（769px ≤ 宽度 ≤ 1024px） */
 @media (min-width: 769px) and (max-width: 1024px) {
   #page-header.full_page {
-    background-size: cover !important;
     background-position: center center !important;
-    height: 450px !important;    /* 平板端容器高度 */
-    background-repeat: no-repeat !important;
   }
-  /* 适配平板端主体margin */
   #content-inner {
-    margin-top: 450px !important;
+    padding-top: 100vh !important;
   }
 }
 
-/* 3. 电脑端（宽度 ≥ 1025px）- 保留原有美观效果 */
+/* 3. 电脑端（宽度 ≥ 1025px） */
 @media (min-width: 1025px) {
   #page-header.full_page {
-    background-size: cover !important;
-    background-position: center center !important;
-    height: 550px !important;    /* 电脑端高度 */
-    background-repeat: no-repeat !important;
+    background-position: center top !important; /* 电脑端靠上显示，更美观 */
   }
-  /* 适配电脑端主体margin */
   #content-inner {
-    margin-top: 550px !important;
+    padding-top: 100vh !important;
   }
+}
+
+/* 可选：如果导航栏固定，调整导航栏层级，避免被遮挡 */
+#nav {
+  z-index: 100 !important; /* 比顶部图高1级，保证导航栏在最上层 */
 }
