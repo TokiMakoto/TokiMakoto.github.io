@@ -1,11 +1,14 @@
+/* 核心逻辑：先匹配首页，再单独匹配文章页（post-bg）强制居中 */
 @media (max-width: 768px) {
-  /* 只有首页头图偏移 */
-  #body-wrap > #page-header {
+  /* 1. 首页头图：仅匹配没有 post-bg 类的 page-header（就是首页） */
+  #page-header:not(.post-bg) {
     background-position: 80% center !important;
+    background-size: cover !important;
   }
 
-  /* 除了首页，全部恢复居中（最保险） */
-  body[class] #page-header {
+  /* 2. 文章页头图：精准匹配带 post-bg 类的 page-header，强制居中 */
+  #page-header.post-bg {
     background-position: center center !important;
+    background-size: cover !important;
   }
 }
