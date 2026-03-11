@@ -1,17 +1,25 @@
-/* 仅手机端首页头图调整，其他页面/设备不变 */
 @media (max-width: 768px) {
-  /* 首页头图调整位置（人物偏右） */
+  /* 第一步：重置伪元素的容器属性，确保占满头图 */
   #page-header:before {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: -1 !important; /* 确保在底层，不遮挡内容 */
+    /* 第二步：调整背景图位置（核心） */
     background-position: 80% center !important;
     background-size: cover !important;
+    background-repeat: no-repeat !important;
+    /* 关键：强制继承背景图，避免主题覆盖 */
+    background-image: inherit !important;
   }
 
-  /* 仅在文章页/归档页等非首页，强制恢复居中（按需开启） */
-  /* 如果发现其他页面头图也被改了，取消下面的注释 */
-  /*
-  .post-bg #page-header:before,
-  .archive-page #page-header:before {
-    background-position: center center !important;
+  /* 可选：如果头图本身有背景属性，直接改#page-header */
+  #page-header {
+    background-position: 80% center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
   }
-  */
 }
