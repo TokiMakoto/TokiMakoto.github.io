@@ -1,0 +1,23 @@
+/* ========== Hexo 顶部图片固定并滑出效果（适配 100vh 高度） ========== */
+#top_img, .top-img, .header-banner, .site-header {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;  /* 关键：改成 100vh，和图片实际显示高度一致 */
+  width: 100% !important;
+  overflow: hidden !important;
+  z-index: 10 !important;
+  margin: 0 !important;
+}
+
+#top_img img, .top-img img, .header-banner img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+#content, .main-content, .post-content, .site-main {
+  position: relative !important;
+  background: #fff !important;  /* 保持你博客的背景色 */
+  z-index: 20 !important;
+  margin-top: 0 !important;
+}
