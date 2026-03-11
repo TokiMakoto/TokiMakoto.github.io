@@ -1,9 +1,13 @@
-/* 仅针对移动端（≤768px）的博客首页头图调整 */
+/* ========== 仅移动端首页头图调整 ========== */
+/* 第一步：先给首页头图单独设置样式（最高优先级） */
 @media (max-width: 768px) {
-  /* 1. 仅首页生效：匹配根路径/首页index页面，排除所有带post/article的页面 */
-  body:not(.post) #page-header:before,
-  html[lang] pathname-regex:^/$ #page-header:before,
-  .index-page #page-header:before {
+  /* 方式1：通过URL路径精准锁定首页（推荐） */
+  html body[class*="index"] #page-header::before,
+  html body:not([class*="post"]) #page-header::before {
+    /* 以下是你需要的首页调整：数值按自己需求改 */
+    background-position: 80% center !important;
+    background-size: cover !important;
+    /* 强制确保伪元素容器正确 */
     content: "" !important;
     position: absolute !important;
     top: 0 !important;
@@ -11,18 +15,13 @@
     width: 100% !important;
     height: 100% !important;
     z-index: -1 !important;
-    background-position: 80% center !important; /* 你调整好的数值 */
-    background-size: cover !important;
-    background-repeat: no-repeat !important;
-    background-image: inherit !important;
   }
 
-  /* 2. 强制恢复文章页头图为默认居中（兜底） */
-  body.post #page-header:before,
-  body.article #page-header:before,
-  [class*="post-"] #page-header:before,
-  [href*="post"] #page-header:before {
+  /* 第二步：强制锁定文章页头图为默认（避免被覆盖） */
+  html body[class*="post"] #page-header::before,
+  html body[class*="article"] #page-header::before {
     background-position: center center !important;
     background-size: cover !important;
+    /* 其他属性继承默认，不额外修改 */
   }
 }
