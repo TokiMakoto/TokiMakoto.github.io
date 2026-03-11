@@ -12,3 +12,62 @@
     background-color: #1a1a1a !important; 
   }
 }
+
+/* ========== 核心：固定顶部图，滑动不跟随 ========== */
+#page-header.full_page {
+  position: fixed !important;    /* 固定定位，不随滚动移动 */
+  top: 0 !important;             /* 固定在视口顶部 */
+  left: 0 !important;            /* 左右铺满 */
+  right: 0 !important;
+  z-index: 99 !important;        /* 保证在页面内容上方，不被遮挡 */
+}
+
+/* 调整页面主体位置，避免内容被固定的顶部图遮挡 */
+#content-inner {
+  margin-top: 550px !important;  /* 初始值适配电脑端，移动端会覆盖 */
+}
+
+/* ========== 多端适配：首页顶部图（index_img） ========== */
+
+/* 1. 手机端（宽度 ≤ 768px）- 完整显示图片，无裁切 */
+@media (max-width: 768px) {
+  #page-header.full_page {
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-color: #1a1a1a !important;
+    height: 320px !important;    /* 手机端容器高度 */
+  }
+  /* 适配手机端主体margin，避免遮挡 */
+  #content-inner {
+    margin-top: 320px !important;
+  }
+}
+
+/* 2. 平板端（769px ≤ 宽度 ≤ 1024px）- 平衡显示与裁切 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #page-header.full_page {
+    background-size: cover !important;
+    background-position: center center !important;
+    height: 450px !important;    /* 平板端容器高度 */
+    background-repeat: no-repeat !important;
+  }
+  /* 适配平板端主体margin */
+  #content-inner {
+    margin-top: 450px !important;
+  }
+}
+
+/* 3. 电脑端（宽度 ≥ 1025px）- 保留原有美观效果 */
+@media (min-width: 1025px) {
+  #page-header.full_page {
+    background-size: cover !important;
+    background-position: center center !important;
+    height: 550px !important;    /* 电脑端高度 */
+    background-repeat: no-repeat !important;
+  }
+  /* 适配电脑端主体margin */
+  #content-inner {
+    margin-top: 550px !important;
+  }
+}
