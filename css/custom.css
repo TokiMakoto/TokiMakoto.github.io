@@ -1,11 +1,11 @@
-/* 只对 ≤768px 手机生效 */
 @media (max-width: 768px) {
-  /* 只改首页头图：你的结构就是这个 */
+  /* 只有首页头图偏移 */
   #body-wrap > #page-header {
     background-position: 80% center !important;
   }
-  /* 文章页/其他页强制恢复居中，不影响 */
-  body.post #page-header {
+
+  /* 除了首页，全部恢复居中（最保险） */
+  body[class] #page-header {
     background-position: center center !important;
   }
 }
