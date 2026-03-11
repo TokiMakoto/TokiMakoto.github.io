@@ -1,23 +1,11 @@
-/* ========== Hexo 顶部图片固定并滑出效果（适配 100vh 高度） ========== */
-#top_img, .top-img, .header-banner, .site-header {
-  position: sticky !important;
-  top: 0 !important;
-  height: 100vh !important;  /* 关键：改成 100vh，和图片实际显示高度一致 */
-  width: 100% !important;
-  overflow: hidden !important;
-  z-index: 10 !important;
-  margin: 0 !important;
+/* 修复顶部大图滚动裁剪方向问题 - 让头部先消失 */
+#page-header.post-bg {
+  background-position: center bottom !important; /* 核心：图片底部对齐容器底部 */
+  background-size: cover !important; /* 保持图片覆盖容器 */
 }
 
-#top_img img, .top-img img, .header-banner img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-}
-
-#content, .main-content, .post-content, .site-main {
-  position: relative !important;
-  background: #fff !important;  /* 保持你博客的背景色 */
-  z-index: 20 !important;
-  margin-top: 0 !important;
+/* 如果是首页的顶部大图，补充这个样式 */
+#page-header.full_page {
+  background-position: center bottom !important;
+  background-size: cover !important;
 }
