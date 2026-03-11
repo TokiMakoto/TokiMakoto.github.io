@@ -1,0 +1,38 @@
+/* 修复首页顶部图在手机端显示不全的问题 */
+/* 针对手机屏幕（宽度≤768px）的适配 */
+@media (max-width: 768px) {
+  /* 首页顶部图容器 */
+  #page-header.full_page {
+    /* 调整手机端顶部图高度（默认太高导致裁剪），可根据需求修改数值 */
+    height: 280px !important; 
+    /* 让图片完整覆盖容器，不拉伸、不裁剪 */
+    background-size: cover !important;
+    /* 让图片居中显示（优先展示核心内容），可改为 top/bottom 调整显示位置 */
+    background-position: center center !important;
+    /* 禁止背景重复 */
+    background-repeat: no-repeat !important;
+  }
+
+  /* 可选：如果顶部图下方有文字被遮挡，调整文字位置 */
+  #page-header.full_page .site-info {
+    padding: 0 10px; /* 增加左右内边距，避免文字贴边 */
+    transform: translateY(-50%); /* 微调文字垂直居中 */
+  }
+}
+
+/* 可选：针对平板（768px-1024px）的适配（按需调整） */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #page-header.full_page {
+    height: 400px !important; /* 平板端高度，按需修改 */
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+}
+
+/* 保留电脑端原有样式（不修改） */
+@media (min-width: 1025px) {
+  #page-header.full_page {
+    height: 500px !important; /* 电脑端高度，可自定义 */
+    background-size: cover !important;
+  }
+}
