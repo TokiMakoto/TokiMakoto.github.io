@@ -1,25 +1,28 @@
+/* 仅针对移动端（≤768px）的博客首页头图调整 */
 @media (max-width: 768px) {
-  /* 第一步：重置伪元素的容器属性，确保占满头图 */
-  #page-header:before {
+  /* 1. 仅首页生效：匹配根路径/首页index页面，排除所有带post/article的页面 */
+  body:not(.post) #page-header:before,
+  html[lang] pathname-regex:^/$ #page-header:before,
+  .index-page #page-header:before {
     content: "" !important;
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    z-index: -1 !important; /* 确保在底层，不遮挡内容 */
-    /* 第二步：调整背景图位置（核心） */
-    background-position: 80% center !important;
+    z-index: -1 !important;
+    background-position: 80% center !important; /* 你调整好的数值 */
     background-size: cover !important;
     background-repeat: no-repeat !important;
-    /* 关键：强制继承背景图，避免主题覆盖 */
     background-image: inherit !important;
   }
 
-  /* 可选：如果头图本身有背景属性，直接改#page-header */
-  #page-header {
-    background-position: 80% center !important;
+  /* 2. 强制恢复文章页头图为默认居中（兜底） */
+  body.post #page-header:before,
+  body.article #page-header:before,
+  [class*="post-"] #page-header:before,
+  [href*="post"] #page-header:before {
+    background-position: center center !important;
     background-size: cover !important;
-    background-repeat: no-repeat !important;
   }
 }
