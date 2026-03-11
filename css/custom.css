@@ -1,21 +1,14 @@
+/* 核心逻辑：先匹配首页，再单独匹配文章页（post-bg）强制居中 */
 @media (max-width: 768px) {
-  /* 1. 首页头图：完整显示+偏右定位（适配人物偏右） */
+  /* 1. 首页头图：仅匹配没有 post-bg 类的 page-header（就是首页） */
   #page-header:not(.post-bg) {
     background-position: 80% center !important;
-    /* contain：完整显示图片，不裁剪、不拉伸 */
-    background-size: contain !important;
-    /* 可选：设置背景色，匹配头图主色调，避免留白突兀 */
-    background-color: #你的头图主色调（比如#f5f5f5） !important;
-    /* 保证背景图不重复 */
-    background-repeat: no-repeat !important;
+    background-size: cover !important;
   }
 
-  /* 2. 文章页头图：完整显示+居中 */
+  /* 2. 文章页头图：精准匹配带 post-bg 类的 page-header，强制居中 */
   #page-header.post-bg {
     background-position: center center !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    /* 文章页背景色可和首页一致，也可单独设置 */
-    background-color: #你的头图主色调 !important;
+    background-size: cover !important;
   }
 }
