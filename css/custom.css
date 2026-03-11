@@ -1,16 +1,18 @@
 /* 仅针对移动端（屏幕宽度≤768px）的博客首页头图 */
 @media (max-width: 768px) {
-  /* 核心选择器：锁定首页的page-header，排除其他页面 */
-  #page-header.home-page:before {
-    /* 调整水平位置：人物偏右则设为 right/80% 等，数值可按需微调 */
+  /* 核心：仅首页生效（通过body的特征/URL路径） */
+  /* 方式1：如果首页body有独有的类（比如index/首页），优先用这个 */
+  body.index #page-header:before,
+  body.home #page-header:before,
+  /* 方式2：通用兜底：URL是首页根路径时生效 */
+  html[lang] body:not(.post) #page-header:before {
     background-position: 80% center !important;
-    /* 保持图片铺满，不拉伸变形 */
     background-size: cover !important;
-    /* 可选：如果想完整显示图片，替换为 background-size: contain !important; */
   }
   
-  /* 兜底：排除文章页等其他页面的头图，避免误影响 */
-  #page-header:not(.home-page):before {
+  /* 兜底：仅文章页恢复居中（避免影响其他页面） */
+  body.post #page-header:before,
+  body.article #page-header:before {
     background-position: center center !important;
   }
 }
