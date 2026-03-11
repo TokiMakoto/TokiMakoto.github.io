@@ -1,11 +1,30 @@
-/* 修复顶部大图滚动裁剪方向问题 - 让头部先消失 */
-#page-header.post-bg {
-  background-position: center bottom !important; /* 核心：图片底部对齐容器底部 */
-  background-size: cover !important; /* 保持图片覆盖容器 */
+/* 彻底修复Butterfly主题顶部大图滚动裁剪方向问题 */
+#page-header {
+  position: relative;
+  overflow: hidden; /* 确保容器只显示指定区域 */
 }
 
-/* 如果是首页的顶部大图，补充这个样式 */
-#page-header.full_page {
-  background-position: center bottom !important;
+/* 文章页顶部大图 */
+#page-header.post-bg {
+  background-image: inherit !important;
   background-size: cover !important;
+  background-position: center bottom !important;
+  background-repeat: no-repeat !important;
+  /* 关键：固定背景图，让容器滚动时背景不跟随 */
+  background-attachment: fixed;
+  /* 确保高度足够，适配裁剪逻辑 */
+  height: 500px; /* 可根据你的图片调整，比如400px/600px */
+  min-height: 100vh;
+}
+
+/* 首页全屏大图 */
+#page-header.full_page {
+  background-size: cover !important;
+  background-position: center bottom !important;
+  background-attachment: fixed !important;
+}
+
+/* 兼容主题滚动时的header高度变化 */
+#page-header.nav-fixed {
+  background-position: center bottom !important;
 }
