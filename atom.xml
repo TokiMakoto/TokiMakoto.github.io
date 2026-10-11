@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2026-10-11T10:08:48.936Z</updated>
+  <updated>2026-10-11T15:42:52.891Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,23 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>ACG常用软件或网站</title>
+    <link href="http://example.com/post/f782485f.html"/>
+    <id>http://example.com/post/f782485f.html</id>
+    <published>2026-10-11T15:00:00.000Z</published>
+    <updated>2026-10-11T15:42:52.891Z</updated>
+    
+    <content type="html"><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><script class="meting-secondary-script-marker" src="\assets\js\Meting.min.js"></script><h1 id="动画"><a href="#动画" class="headerlink" title="动画"></a>动画</h1><br><ul><li><p><strong>在线动画：</strong></p></li><li><p><strong>Animeko</strong>：<a href="https://github.com/open-ani/animeko">https://github.com/open-ani/animeko</a></p></li></ul><p>        集找番、追番、看番的一站式弹幕追番平台，云收藏同步 (Bangumi)，离线缓存，BitTorrent，弹幕云过滤</p><p>        注意，使用Animeko进行BT下载时会自动做种</p><br><ul><li><p><strong>本地动画：</strong></p></li><li><p><strong>蜜柑计划</strong>（获取磁力链接，支持RSS，推荐ANI、Kirara Fantasia、Kirara Fantasia）：<a href="https://mikanani.me/">https://mikanani.me/</a></p></li><li><p><strong>qBittorrent-Enhanced-Edition</strong>（BT下载）：<a href="https://github.com/c0re100/qBittorrent-Enhanced-Edition">https://github.com/c0re100/qBittorrent-Enhanced-Edition</a></p></li><li><p><strong>PeerBanHelper</strong>（可选，防吸血）：<a href="https://github.com/PBH-BTN/PeerBanHelper">https://github.com/PBH-BTN/PeerBanHelper</a></p></li><li><p><strong>PotPlayer</strong>（本地播放器）：<a href="https://potplayer.tv/?lang=zh_CN">https://potplayer.tv/?lang=zh_CN</a></p></li></ul><br><br><h1 id="漫画"><a href="#漫画" class="headerlink" title="漫画"></a>漫画</h1><br><ul><li><strong>Mihon</strong>（安卓阅读器）：<a href="https://github.com/mihonapp">https://github.com/mihonapp</a></li></ul><p>        推荐优先开启漫画柜、拷贝漫画、再漫画、Komiic、Zero等图源插件</p><ul><li><strong>NeeView</strong>（PC本地阅读器）：<a href="https://github.com/neelabo/NeeView">https://github.com/neelabo/NeeView</a></li></ul><br><br><h1 id="阅读"><a href="#阅读" class="headerlink" title="阅读"></a>阅读</h1><br><ul><li><p><strong>轻小说：</strong></p></li><li><p><strong>轻之国度</strong>（在线阅读，更新速度快）：<a href="https://www.lightnovel.fun/">https://www.lightnovel.fun/</a></p></li><li><p><strong>轻书架</strong>（在线阅读，旧书比较全，但经常炸）：<a href="https://www.lightnovel.life/">https://www.lightnovel.life/</a></p></li><li><p><strong>轻小说机翻机器人</strong>（非常全，有很多WEB）：<a href="https://n.novelia.cc/">https://n.novelia.cc/</a></p></li></ul><br><ul><li><p><strong>电子书：</strong></p></li><li><p><strong>贝克街推理学院</strong>（推理小说）：<a href="https://www.tuilixy.net/">https://www.tuilixy.net/</a></p></li><li><p><strong>推理屋</strong>（推理小说）：<a href="https://tl.lazypos.cn/">https://tl.lazypos.cn/</a></p></li><li><p><strong>Z-library</strong>（非常全面的各类电子书，X上会有最新域名）：<a href="https://x.com/Z_Lib_official">https://x.com/Z_Lib_official</a></p></li><li><p><strong>Anna’s Archive</strong>（备用）：<a href="http://annas-archive.pk/">http://annas-archive.pk/</a></p></li></ul><br><ul><li><p><strong>阅读器：</strong></p></li><li><p><strong>Readest</strong>（PC本地阅读）：<a href="https://github.com/readest/readest">https://github.com/readest/readest</a></p></li><li><p><strong>Readera</strong>（移动端本地阅读）：<a href="https://readera.org/">https://readera.org/</a></p></li></ul><br><br><h1 id="Galgame"><a href="#Galgame" class="headerlink" title="Galgame"></a>Galgame</h1><br><ul><li><p><strong>2DFan</strong>（新作情报，补丁）：<a href="https://fan2d.top/">https://fan2d.top/</a></p></li><li><p><strong>绯月</strong>（放流）：<a href="https://bbs.kfpromax.com/">https://bbs.kfpromax.com/</a></p></li><li><p><strong>ファウストの旧作館</strong>（古早作品下载）：<a href="https://www.erogame.space/">https://www.erogame.space/</a></p></li><li><p><strong>鲲Galgame</strong>（部分机翻补丁）：<a href="https://www.moyu.moe/">https://www.moyu.moe/</a></p></li></ul><br><br><h1 id="梯子"><a href="#梯子" class="headerlink" title="梯子"></a>梯子</h1><br><ul><li><p><strong>丛雨云</strong>：<a href="https://congyu.moe/auth/register?referral_code=ef0978ed86">https://congyu.moe/auth/register?referral_code=ef0978ed86</a></p></li><li><p><strong>NanoCloud</strong>（备用）：<a href="https://edu.360buyimg.men/auth/register?code=hB8RjqdU">https://edu.360buyimg.men/auth/register?code=hB8RjqdU</a></p></li></ul><br><br><h1 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h1><br><ul><li><strong>Magpie</strong>：<a href="https://github.com/Blinue/Magpie">https://github.com/Blinue/Magpie</a></li></ul><p>        Magpie 是一个轻量级的窗口超分辨率工具，可以用于强制提高古早游戏的分辨率</p><br><ul><li><strong>AiNiee</strong>：<a href="https://github.com/NEKOparapa/AiNiee">https://github.com/NEKOparapa/AiNiee</a></li></ul><p>        AiNiee 是一款专注于 AI 翻译的工具，一键自动翻译游戏、书籍、字幕、文档等复杂长文本内容</p><br><ul><li><strong>S.EE（图床）</strong>：<a href="https://s.ee/zh-CN/">https://s.ee/zh-CN/</a></li></ul><p>        S.EE 是一个链接管理平台，适用于URL、文本和文件</p>]]></content>
+    
+    
+    <summary type="html">个人向</summary>
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>2026秋季新番个人向记录</title>
