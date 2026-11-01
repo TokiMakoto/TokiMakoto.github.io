@@ -1,0 +1,26 @@
+# 统一换行符：文本文件一律 LF，二进制文件不做转换
+# 作用：覆盖 core.autocrlf=true 的行为，消除
+# "warning: LF will be replaced by CRLF the next time Git touches it"
+* text=auto eol=lf
+
+# 二进制资源（禁止 EOL/diff 处理）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.bmp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.mp3 binary
+*.mp4 binary
+*.webm binary
+*.m4a binary
+*.flac binary
+*.pdf binary
+*.zip binary
+*.7z binary
