@@ -333,30 +333,6 @@
   background: var(--pldc-head);
 }
 
-.pldc .pldc-sync {
-  position: absolute;
-  top: 50%;
-  right: 3px;
-  transform: translateY(-50%);
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: 0;
-  border-radius: 4px;
-  background: var(--card-bg, #fff);
-  color: var(--pldc-muted);
-  font-size: 11px;
-  line-height: 16px;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity .15s, color .15s;
-}
-
-.pldc .pldc-cell:hover .pldc-sync,
-.pldc .pldc-cell:focus-within .pldc-sync { opacity: .7; }
-
-.pldc .pldc-sync:hover { opacity: 1; color: var(--pldc-accent); }
-
 .pldc .pldc-hint {
   display: inline-flex;
   align-items: center;
@@ -527,5 +503,4 @@
   .pldc .pldc-btn { padding: 6px 10px; }
   .pldc .pldc-rowhead { min-width: 104px; font-size: 12px; }
   .pldc .pldc-table { min-width: 640px; }
-  .pldc .pldc-sync { opacity: .5; }
 }

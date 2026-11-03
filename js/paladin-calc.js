@@ -99,10 +99,10 @@
 
   // 默认四列（原表剑表默认值；钝器用「武器类型」下拉切换）
   var BASE = [
-    { name: '单手剑 A', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '单手剑 B', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '双手剑 A', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '双手剑 B', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' }
+    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '武器3', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '武器4', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' }
   ];
 
   var CONVERT_BASE = [
@@ -528,12 +528,7 @@
       html += '<tr' + (fld.key === 'weapon' ? ' class="pldc-row-weapon"' : '') + '>' +
         '<th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < 4; c++) {
-        html += '<td class="pldc-cell">' + cellControl('calc', c, fld, S.columns[c]);
-        if (!fld.noSync) {
-          html += '<button type="button" class="pldc-sync" data-act="sync" data-mode="calc" data-col="' + c +
-            '" data-key="' + fld.key + '" title="把该值同步到本表另外三列" aria-label="同步">⇊</button>';
-        }
-        html += '</td>';
+        html += '<td class="pldc-cell">' + cellControl('calc', c, fld, S.columns[c]) + '</td>';
       }
       html += '</tr>';
     }
@@ -551,7 +546,7 @@
     html += '</tbody></table></div>' +
       '<p class="pldc-note">每列可单独选武器类型；切换武器会按该武器重置主属性系数、熟练度与优劣比例，之后仍可手动改。' +
       '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
-      '「⇊」把该格数值同步到本表另外三列；鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
+      '鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
       '</section>';
     return html;
   }
@@ -574,9 +569,7 @@
       var fld = CONVERT_FIELDS[f];
       html += '<tr><th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < 4; c++) {
-        html += '<td class="pldc-cell">' + cellControl('convert', c, fld, S.convert[c]) +
-          '<button type="button" class="pldc-sync" data-act="sync" data-mode="convert" data-col="' + c +
-          '" data-key="' + fld.key + '" title="把该值同步到本表另外三列" aria-label="同步">⇊</button></td>';
+        html += '<td class="pldc-cell">' + cellControl('convert', c, fld, S.convert[c]) + '</td>';
       }
       html += '</tr>';
     }
@@ -891,22 +884,6 @@
       toast('已恢复默认');
       return;
     }
-    if (act === 'sync') {
-      var mode = btn.getAttribute('data-mode');
-      var col = parseInt(btn.getAttribute('data-col'), 10);
-      var key = btn.getAttribute('data-key');
-      var val = slotsOf(mode)[col][key];
-      for (var i = 0; i < 4; i++) {
-        if (i === col) continue;
-        writeSlot(mode, i, key, val);
-        var input = root.querySelector('[data-mode="' + mode + '"][data-col="' + i + '"][data-key="' + key + '"]');
-        if (input) input.value = val;
-      }
-      if (mode === 'convert') refreshConvert(); else refreshCalc();
-      saveState();
-      toast('已同步到本表四列');
-      return;
-    }
   }
 
   function build() {
@@ -948,9 +925,20 @@
     return normalize(null);
   }
 
+  // 本页（且仅本页）把文章信息里的「发表于」改成「更新于」
+  function relabelPostDate() {
+    var labels = document.querySelectorAll('#post-meta .post-meta-label');
+    for (var i = 0; i < labels.length; i++) {
+      if (/发表于/.test(labels[i].textContent)) {
+        labels[i].textContent = labels[i].textContent.replace('发表于', '更新于');
+      }
+    }
+  }
+
   function init() {
     root = document.getElementById('pldc');
     if (!root) return;
+    relabelPostDate();
     S = loadState();
     build();
     root.addEventListener('input', onInput);
