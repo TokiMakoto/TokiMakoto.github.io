@@ -357,20 +357,72 @@
 
 .pldc .pldc-sync:hover { opacity: 1; color: var(--pldc-accent); }
 
-.pldc .pldc-tip {
-  display: inline-block;
-  width: 13px;
-  height: 13px;
+.pldc .pldc-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
   margin-left: 4px;
   border: 1px solid var(--pldc-line-strong);
   border-radius: 50%;
   font-size: 9px;
-  line-height: 12px;
-  text-align: center;
+  line-height: 1;
   color: var(--pldc-muted);
   vertical-align: 1px;
   cursor: help;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: color .15s, border-color .15s, background .15s;
 }
+
+.pldc .pldc-hint:hover,
+.pldc .pldc-hint:focus {
+  color: #fff;
+  background: var(--pldc-accent);
+  border-color: var(--pldc-accent);
+  outline: none;
+}
+
+/* 说明气泡：由 JS 追加到 body，fixed 定位，不受表格滚动容器裁剪 */
+.pldc-tooltip {
+  position: fixed;
+  z-index: 9998;
+  max-width: min(300px, calc(100vw - 24px));
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(28, 32, 38, .95);
+  color: #fff;
+  font-size: 12.5px;
+  line-height: 1.65;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .24);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(3px);
+  transition: opacity .14s, transform .14s, visibility .14s;
+  pointer-events: none;
+}
+
+.pldc-tooltip.is-on {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* 武器类型行 */
+.pldc .pldc-row-weapon > th,
+.pldc .pldc-row-weapon > td {
+  background: var(--pldc-head) !important;
+}
+
+.pldc .pldc-row-weapon .pldc-rowhead {
+  background: var(--card-bg, #fff) !important;
+  color: var(--font-color, #4c4948);
+  font-weight: 600;
+}
+
+.pldc .pldc-row-weapon .pldc-select { font-weight: 600; }
 
 /* ---------------- 文案 ---------------- */
 
@@ -384,7 +436,9 @@
 
 .pldc .pldc-warn {
   display: block;
-  margin-top: 4px;
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.6;
   color: var(--pldc-warn);
 }
 

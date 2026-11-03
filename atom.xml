@@ -6,7 +6,7 @@
   <link href="http://example.com/atom.xml" rel="self"/>
   
   <link href="http://example.com/"/>
-  <updated>2026-10-15T00:37:57.658Z</updated>
+  <updated>2026-11-03T17:08:51.858Z</updated>
   <id>http://example.com/</id>
   
   <author>
@@ -15,6 +15,23 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>圣骑士环破伤害计算器</title>
+    <link href="http://example.com/paladin/"/>
+    <id>http://example.com/paladin/</id>
+    <published>2026-11-03T17:20:00.000Z</published>
+    <updated>2026-11-03T17:08:51.858Z</updated>
+    
+    <content type="html"><![CDATA[<link rel="stylesheet" class="aplayer-secondary-style-marker" href="\assets\css\APlayer.min.css"><script src="\assets\js\APlayer.min.js" class="aplayer-secondary-script-marker"></script><script>var meting_api='https://api.injahow.cn/meting/?server=:server&type=:type&id=:id&r=:r'</script><script class="meting-secondary-script-marker" src="\assets\js\Meting.min.js"></script><p>本计算器由 Excel「圣骑士环破伤害计算器 v1.5」逐条复刻而成，口径与原表完全一致：改动任一参数即时重算，四个方案横向对比，结果自动保存在本机浏览器，也可以一键生成分享链接。</p><span id="more"></span><style>/* 计算器页：隐藏站点页脚版权与评论、相关推荐 */#footer,#post-comment,.relatedPosts { display: none !important; }</style><div id="pldc" class="pldc" data-ready="0"><div id="pldc-toolbar" class="pldc-toolbar"></div><div id="pldc-tabs" class="pldc-tabs"></div><div id="pldc-panels"></div><section class="pldc-panel pldc-guide" data-panel="guide" hidden><h3>适用范围</h3><ul>  <li>适用于计算 <b>Wings 圣骑士四转环破木桩伤害</b>。</li>  <li>页面分「环破伤害计算」「攻力敏换算」「使用说明」三块，对应原表的三张计算表；参数名与计算结果行与原表一一对应。</li>  <li>剑与钝器已合并为同一张表：每列用「武器类型」下拉切换，四个方案可以混着填，做横向对比；表头名称可直接点击修改。</li></ul><h3>参数怎么填</h3><ul>  <li><span class="pldc-tag pldc-must">需选择</span><b>武器类型</b>：单手剑 / 双手剑 / 单手钝器 / 双手钝器。切换后会自动带出该武器的主属性系数、熟练度与优劣比例，仍可手动改。</li>  <li><span class="pldc-tag pldc-must">需填写</span><b>力量</b>：角色力量总和，包括技能、装备及家族等。</li>  <li><span class="pldc-tag pldc-must">需填写</span><b>敏捷</b>：角色敏捷总和，包括技能、装备及家族等。</li>  <li><span class="pldc-tag pldc-must">需填写</span><b>攻击力总和</b>：包括武器 / 手套 / 盾牌 / 护肩等。</li>  <li><span class="pldc-tag pldc-must">需填写</span><b>攻速</b>：武器攻击速度，填快速、急速、粽子 buff 后的档位（2 档最快，7 档最慢）。</li>  <li><span class="pldc-tag">无需改动</span><b>熟练度 %</b>：默认精通点满，剑为 60%，钝器为 75%（原表 0.6 / 0.75，本页按百分比填写）。</li>  <li><span class="pldc-tag">无需改动</span><b>优势 / 劣势主属性系数、副属性系数</b>：武器系数，随武器类型带出。</li>  <li><span class="pldc-tag">无需改动</span><b>优势比例 / 劣势比例</b>：由劈刺比决定，环破为 3:2；剑不分优劣，填 100% / 0%；钝器填 60% / 40%。</li>  <li><span class="pldc-tag">可视情况</span><b>怪物物理防御</b>：怪物所拥有的固有属性，物理防御力数值，木桩填 0。</li>  <li><span class="pldc-tag">可视情况</span><b>技能百分比</b>：环破百分比，默认点满，技改为 580（即 580%）。</li>  <li><span class="pldc-tag">可视情况</span><b>增益百分比</b>：烈焰 / 寒冰 / 雷电 buff 提供的百分比，技改为 130，圣 buff 为 140，不开 buff 为 100。</li>  <li><span class="pldc-tag pldc-must">需选择</span><b>是否克制</b>：默认属性 buff 点满，克制 150% / 非克制 100% / 抗性 50%。</li>  <li><span class="pldc-tag pldc-must">需选择</span><b>暴击增益</b>（顶部）：火眼晶晶、栗子味粽子、火眼与粽子叠加、珠光药丸，或全部不计算。默认不计算。</li>  <li><span class="pldc-tag pldc-must">需选择</span><b>英雄回声</b>（顶部）：选择计算后，攻击力按 <code>INT(攻击力 × 1.04)</code> 参与面板计算。</li></ul><h3>攻速与延迟对照</h3><table class="pldc-table">  <thead>    <tr><th>攻速档位</th><th>延迟（ms）</th><th>100 hit 所需时间（s）</th><th>每分钟攻击次数</th></tr>  </thead>  <tbody>    <tr><td>2 档</td><td>630</td><td>63.0</td><td>95.24</td></tr>    <tr><td>3 档</td><td>690</td><td>69.0</td><td>86.96</td></tr>    <tr><td>4 档</td><td>750</td><td>75.0</td><td>80.00</td></tr>    <tr><td>5 档</td><td>810</td><td>81.0</td><td>74.07</td></tr>    <tr><td>6 档</td><td>840</td><td>84.0</td><td>71.43</td></tr>    <tr><td>7 档</td><td>900</td><td>90.0</td><td>66.67</td></tr>    <tr><td>8 档</td><td>960</td><td>96.0</td><td>62.50</td></tr>    <tr><td>9 档</td><td>—</td><td>—</td><td>—</td></tr>  </tbody></table><p class="pldc-note">原表中等级 8 与 9 不在环破计算的取用范围内（9 的延迟为空，会导致除零），网页版只提供 2–7 档；表中其余行仅作对照。</p><h3>计算口径</h3><ul>  <li><b>面板</b>：优势上限 = <code>(力量 × 优势系数 × 4 + 敏捷 × 副属性系数) × INT(攻击力 × (1 + 回声)) / 100</code>；优势下限把「力量项」再乘 <code>0.9 × 熟练度</code>；劣势上限 / 下限把优势系数换成劣势系数。</li>  <li><b>面板期望值</b> = 优势上下限平均 × 优势比例 + 劣势上下限平均 × 劣势比例。</li>  <li><b>单次伤害期望</b> = 技能百分比、攻击力、增益百分比、克制百分比、防御（按 0.55 折算）与暴击率 / 暴击伤害的加权结果。</li>  <li><b>每分钟造成伤害（万）</b> = 单次伤害期望 × 每分钟攻击次数 ÷ 10000。</li>  <li><b>攻力敏换算</b>：攻击 / 力量收益 = 1 点攻击力等价于多少点力量的输出提升；力量 / 敏捷收益、攻击 / 敏捷收益同理，本表算整体输出提升，不是面板最高值，且不含英雄回声。</li></ul><h3>要注意的坑</h3><ul>  <li>计算器未涉及伤害上限，若设置条件下环破单段达到伤害上限以上，实际伤害相对计算结果存在折损。</li>  <li>未计算压制术，暂不支持面板过低下的高防御力计算，即怪物防御的 60% 超过人物最低面板的情况。</li>  <li>默认 100% 命中木桩，怪物对玩家无等级压制，不同情况下实际伤害存在折损。</li>  <li>默认环破段数为 1，计算伤害分布时默认使用平均分布。</li>  <li>浮点精度问题：小数点后的数值可能与游戏不符，仅供参考。</li></ul><h3>关于</h3><ul>  <li>原作者：kook ID <b>朱鹭A#1522</b>，计算器出现错误或其他问题可以联系作者。</li>  <li>计算器版本：<b>1.5</b>，发布日期：2026 年 6 月 28 日。本页为其网页复刻版，公式与默认值保持一致。</li>  <li>更新记录：v1.1 更改防御力算法；v1.2 修复钝器攻击受防御力影响的算法，添加圣属性和无属性的增益百分比；v1.3 新增攻击 / 力量 / 敏捷换算；v1.31 修复增益百分比与克制百分比的计算优先度（感谢玩家【铁板鸡架】勘误）；v1.4 增加暴击增益计算；v1.41 增加珠光药丸计算；v1.5 增加英雄回声计算。</li></ul></section><p class="pldc-foot">数据自动保存在本机浏览器 · 「复制分享链接」生成的是紧凑短码，可把当前配置发给别人 · 网页版与 Excel v1.5 口径一致</p></div><link rel="stylesheet" href="/css/paladin-calc.css"><script src="/js/paladin-calc.js"></script>]]></content>
+    
+    
+    <summary type="html">Wings 圣骑士四转环破木桩伤害计算器 v1.5 网页版，四方案横向对比、武器类型可逐列切换、暴击增益与英雄回声，附攻力敏换算。</summary>
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>个人向ACG常用软件或网站</title>

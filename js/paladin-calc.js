@@ -1,22 +1,30 @@
 /*!
  * 圣骑士环破伤害计算器 · 网页版
  * 逐条复刻 Excel「圣骑士环破伤害计算器 v1.5」（Wings 圣骑士四转环破木桩伤害）
- * 口径说明：Excel INT() 对正数等价于 Math.trunc()；攻速等级 → 延迟(ms) → 每分钟攻击次数 = 60000 / 延迟
+ * 口径说明：Excel INT() 对正数等价于 Math.trunc()；每分钟攻击次数 = 60000 / 延迟(ms)
+ * 剑 / 钝器合并为一张表：每列用「武器类型」下拉切换，系数、熟练度、优劣比例随武器带出
  */
 (function () {
   'use strict';
 
   /* ============================ 模型 ============================ */
 
-  // 原表 G3:K10 攻速表。等级 2 最快、7 最慢（9 行延迟为空，原表 J 列为 #DIV/0!，故不提供）
-  // J 列公式 = 60 / (K*100/1000) * 100 = 60000 / 延迟ms
+  // 原表 G3:K10 攻速表。2 档最快、7 档最慢（9 行延迟为空，原表 J 列为 #DIV/0!，故不提供）
   var SPEED_TABLE = [
-    { level: 2, text: '2 · 最快', delay: 630 },
-    { level: 3, text: '3 · 急速', delay: 690 },
-    { level: 4, text: '4 · 更快', delay: 750 },
-    { level: 5, text: '5 · 快', delay: 810 },
-    { level: 6, text: '6 · 普通', delay: 840 },
-    { level: 7, text: '7 · 慢', delay: 900 }
+    { level: 2, delay: 630 },
+    { level: 3, delay: 690 },
+    { level: 4, delay: 750 },
+    { level: 5, delay: 810 },
+    { level: 6, delay: 840 },
+    { level: 7, delay: 900 }
+  ];
+
+  // 武器类型 → 优势 / 劣势主属性系数、熟练度(%)、优势 / 劣势比例(%)
+  var WEAPONS = [
+    { text: '单手剑',   advCoef: 1,    disCoef: 1,    mastery: 60, advRatio: 100, disRatio: 0 },
+    { text: '双手剑',   advCoef: 1.15, disCoef: 1.15, mastery: 60, advRatio: 100, disRatio: 0 },
+    { text: '单手钝器', advCoef: 1.1,  disCoef: 0.8,  mastery: 75, advRatio: 60,  disRatio: 40 },
+    { text: '双手钝器', advCoef: 1.2,  disCoef: 0.85, mastery: 75, advRatio: 60,  disRatio: 40 }
   ];
 
   // I12 是否计算暴击增益 → I13 暴击率 / I14 暴击伤害（暴击伤害以「加点」形式加到技能百分比上）
@@ -41,43 +49,46 @@
     { text: '抗性', pct: 0.5 }
   ];
 
-  var SLOT_LABELS = ['方案 1', '方案 2', '方案 3', '方案 4'];
+  var HINT_WEAPON = '选好武器类型后，下面的优势 / 劣势主属性系数、熟练度、优劣比例会按该武器自动带出，仍可手动改。' +
+    '单手剑 1 / 1、60%、100% / 0%；双手剑 1.15 / 1.15、60%、100% / 0%；' +
+    '单手钝器 1.1 / 0.8、75%、60% / 40%；双手钝器 1.2 / 0.85、75%、60% / 40%。';
 
-  var WEAPON_FIELDS = [
-    { key: 'str',      label: '力量',           kind: 'num', step: 1,    hint: '角色力量总和（含技能、装备、家族）' },
-    { key: 'dex',      label: '敏捷',           kind: 'num', step: 1,    hint: '角色敏捷总和（含技能、装备、家族）' },
-    { key: 'atk',      label: '攻击力总和',     kind: 'num', step: 1,    hint: '武器 / 手套 / 盾牌 / 护肩等合计' },
-    { key: 'spd',      label: '攻速等级',       kind: 'speed',           hint: '填快速 / 急速 / 粽子 buff 后的攻速（2 最快）' },
-    { key: 'mastery',  label: '熟练度',         kind: 'num', step: 0.01, min: 0, max: 1, hint: '精通点满：剑 0.6，钝器 0.75' },
-    { key: 'advCoef',  label: '优势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动' },
-    { key: 'disCoef',  label: '劣势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动' },
-    { key: 'subCoef',  label: '副属性系数',     kind: 'num', step: 0.01, hint: '武器系数，无需改动' },
-    { key: 'advRatio', label: '优势比例 %',     kind: 'num', step: 1,    hint: '由劈刺比决定：环破 3:2，剑填 100%，钝器填 60%' },
-    { key: 'disRatio', label: '劣势比例 %',     kind: 'num', step: 1,    hint: '由劈刺比决定：环破 3:2，剑填 0%，钝器填 40%' },
-    { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,    hint: '木桩默认 0，可填怪物物理防御力' },
-    { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10,   hint: '环破点满技改 580' },
-    { key: 'buff',     label: '增益百分比 %',   kind: 'num', step: 10,   hint: '技改 130 / 圣 buff 140 / 不开 buff 100' },
-    { key: 'relation', label: '是否克制',       kind: 'relation',        hint: '克制 150% / 非克制 100% / 抗性 50%' }
+  var FIELDS = [
+    { key: 'weapon',   label: '武器类型',       kind: 'weapon',   noSync: true, hint: HINT_WEAPON },
+    { key: 'str',      label: '力量',           kind: 'num', step: 1,  hint: '角色力量总和，包括技能、装备及家族等。' },
+    { key: 'dex',      label: '敏捷',           kind: 'num', step: 1,  hint: '角色敏捷总和，包括技能、装备及家族等。' },
+    { key: 'atk',      label: '攻击力总和',     kind: 'num', step: 1,  hint: '武器 / 手套 / 盾牌 / 护肩等攻击力合计。' },
+    { key: 'spd',      label: '攻速',           kind: 'speed',        hint: '填上快速、急速、粽子等 buff 后的攻速档位。2 档最快（630ms），7 档最慢（900ms）。' },
+    { key: 'mastery',  label: '熟练度 %',       kind: 'num', step: 1,  hint: '精通点满：剑 60%，钝器 75%。原表 0.6 / 0.75，本页按百分比填写。' },
+    { key: 'advCoef',  label: '优势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动带出，一般无需改动。' },
+    { key: 'disCoef',  label: '劣势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动带出，一般无需改动。' },
+    { key: 'subCoef',  label: '副属性系数',     kind: 'num', step: 0.01, hint: '武器系数，默认 1，一般无需改动。' },
+    { key: 'advRatio', label: '优势比例 %',     kind: 'num', step: 1,  hint: '由劈刺比决定：环破 3:2，剑不分优劣填 100%，钝器填 60%。' },
+    { key: 'disRatio', label: '劣势比例 %',     kind: 'num', step: 1,  hint: '剑填 0%，钝器填 40%。优势比例 + 劣势比例应为 100%。' },
+    { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,  hint: '怪物固有属性，物理防御力数值；打木桩填 0。' },
+    { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10, hint: '环破点满技改 580%，原表写 5.8。' },
+    { key: 'buff',     label: '增益百分比 %',   kind: 'num', step: 10, hint: '技改 130% / 圣 buff 140% / 不开 buff 100%。' },
+    { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性 buff 点满：克制 150% / 非克制 100% / 抗性 50%。' }
   ];
 
-  var WEAPON_RESULTS = [
-    { key: 'advHi', label: '优势面板上限',            dec: 2 },
-    { key: 'advLo', label: '优势面板下限',            dec: 2 },
-    { key: 'disHi', label: '劣势面板上限',            dec: 2 },
-    { key: 'disLo', label: '劣势面板下限',            dec: 2 },
-    { key: 'panel', label: '面板期望值',              dec: 2, strong: true },
-    { key: 'hits',  label: '每分钟攻击次数',          dec: 2 },
-    { key: 'hit',   label: '单次伤害期望',            dec: 2 },
-    { key: 'dpm',   label: '每分钟造成伤害（万）',    dec: 2, strong: true }
+  var RESULTS = [
+    { key: 'advHi', label: '优势面板上限',         dec: 2 },
+    { key: 'advLo', label: '优势面板下限',         dec: 2 },
+    { key: 'disHi', label: '劣势面板上限',         dec: 2 },
+    { key: 'disLo', label: '劣势面板下限',         dec: 2 },
+    { key: 'panel', label: '面板期望值',           dec: 2, strong: true },
+    { key: 'hits',  label: '每分钟攻击次数',       dec: 2 },
+    { key: 'hit',   label: '单次伤害期望',         dec: 2 },
+    { key: 'dpm',   label: '每分钟造成伤害（万）', dec: 2, strong: true }
   ];
 
   var CONVERT_FIELDS = [
-    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动' },
-    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动' },
-    { key: 'str',     label: '力量',         kind: 'num', step: 1,    hint: '角色力量总和' },
-    { key: 'dex',     label: '敏捷',         kind: 'num', step: 1,    hint: '角色敏捷总和' },
-    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1,    hint: '角色攻击力总和' },
-    { key: 'mastery', label: '熟练度',       kind: 'num', step: 0.01, hint: '剑 0.6，钝器 0.75' }
+    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
+    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
+    { key: 'str',     label: '力量',         kind: 'num', step: 1,    hint: '角色力量总和。' },
+    { key: 'dex',     label: '敏捷',         kind: 'num', step: 1,    hint: '角色敏捷总和。' },
+    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1,    hint: '角色攻击力总和。' },
+    { key: 'mastery', label: '熟练度 %',     kind: 'num', step: 1,    hint: '剑 60%，钝器 75%。原表 0.6 / 0.75。' }
   ];
 
   var CONVERT_RESULTS = [
@@ -86,27 +97,26 @@
     { key: 'atkPerDex', label: '攻击 / 敏捷收益', dec: 4, strong: true }
   ];
 
+  // 默认四列（原表剑表默认值；钝器用「武器类型」下拉切换）
+  var BASE = [
+    { name: '单手剑 A', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '单手剑 B', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '双手剑 A', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
+    { name: '双手剑 B', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' }
+  ];
+
+  var CONVERT_BASE = [
+    { name: '双手剑',   advCoef: 1.15, disCoef: 1.15, str: 1400, dex: 144, atk: 200, mastery: 60 },
+    { name: '单手剑',   advCoef: 1,    disCoef: 1,    str: 1100, dex: 120, atk: 200, mastery: 60 },
+    { name: '双手钝器', advCoef: 1.2,  disCoef: 0.85, str: 1400, dex: 144, atk: 200, mastery: 75 },
+    { name: '单手钝器', advCoef: 1.1,  disCoef: 0.8,  str: 1000, dex: 100, atk: 200, mastery: 75 }
+  ];
+
   var DEFAULTS = {
     crit: '不计算',
     echo: '不计算',
-    sword: [
-      { name: '单手剑 A', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 0.6, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0,  def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '单手剑 B', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 0.6, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0,  def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '双手剑 A', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 0.6, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0,  def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '双手剑 B', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 0.6, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0,  def: 0, skill: 580, buff: 130, relation: '克制' }
-    ],
-    blunt: [
-      { name: '单手钝器 A', str: 1300, dex: 120, atk: 200, spd: 2, mastery: 0.75, advCoef: 1.1, disCoef: 0.8,  subCoef: 1, advRatio: 60, disRatio: 40, def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '单手钝器 B', str: 1400, dex: 120, atk: 200, spd: 2, mastery: 0.75, advCoef: 1.1, disCoef: 0.8,  subCoef: 1, advRatio: 60, disRatio: 40, def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '双手钝器 A', str: 1300, dex: 120, atk: 250, spd: 2, mastery: 0.75, advCoef: 1.2, disCoef: 0.85, subCoef: 1, advRatio: 60, disRatio: 40, def: 0, skill: 580, buff: 130, relation: '克制' },
-      { name: '双手钝器 B', str: 1300, dex: 120, atk: 250, spd: 2, mastery: 0.75, advCoef: 1.2, disCoef: 0.85, subCoef: 1, advRatio: 60, disRatio: 40, def: 0, skill: 580, buff: 130, relation: '克制' }
-    ],
-    convert: [
-      { name: '双手剑',   advCoef: 1.15, disCoef: 1.15, str: 1400, dex: 144, atk: 200, mastery: 0.6  },
-      { name: '单手剑',   advCoef: 1,    disCoef: 1,    str: 1100, dex: 120, atk: 200, mastery: 0.6  },
-      { name: '双手钝器', advCoef: 1.2,  disCoef: 0.85, str: 1400, dex: 144, atk: 200, mastery: 0.75 },
-      { name: '单手钝器', advCoef: 1.1,  disCoef: 0.8,  str: 1000, dex: 100, atk: 200, mastery: 0.75 }
-    ]
+    columns: JSON.parse(JSON.stringify(BASE)),
+    convert: JSON.parse(JSON.stringify(CONVERT_BASE))
   };
 
   /* ------------------------- 计算 ------------------------- */
@@ -115,6 +125,8 @@
     for (var i = 0; i < list.length; i++) if (list[i].text === text) return list[i];
     return list[fallback || 0];
   }
+
+  function weaponBy(text) { return optBy(WEAPONS, text, 0); }
 
   function delayOf(level) {
     for (var i = 0; i < SPEED_TABLE.length; i++) if (SPEED_TABLE[i].level === level) return SPEED_TABLE[i].delay;
@@ -129,11 +141,12 @@
 
     // X4 经回声加成后取整，再除以 100（原表 INT(X4*(1+I16))/100）
     var atkEff = Math.trunc(c.atk * (1 + echo.bonus)) / 100;
+    var mastery = c.mastery / 100;
 
     var advHi = (c.str * c.advCoef * 4 + c.dex * c.subCoef) * atkEff;
-    var advLo = (c.str * c.advCoef * 4 * 0.9 * c.mastery + c.dex * c.subCoef) * atkEff;
+    var advLo = (c.str * c.advCoef * 4 * 0.9 * mastery + c.dex * c.subCoef) * atkEff;
     var disHi = (c.str * c.disCoef * 4 + c.dex * c.subCoef) * atkEff;
-    var disLo = (c.str * c.disCoef * 4 * 0.9 * c.mastery + c.dex * c.subCoef) * atkEff;
+    var disLo = (c.str * c.disCoef * 4 * 0.9 * mastery + c.dex * c.subCoef) * atkEff;
 
     var panel = (advHi + advLo) / 2 * (c.advRatio / 100) + (disHi + disLo) / 2 * (c.disRatio / 100);
 
@@ -157,11 +170,12 @@
 
   // 攻力敏换算：X11 / X12 / X13
   function computeConvert(c) {
-    var k = 0.9 * c.mastery + 1;
+    var mastery = c.mastery / 100;
+    var k = 0.9 * mastery + 1;
     var den = 12 * c.atk * c.advCoef * k + 8 * c.atk * c.disCoef * k;
     var num = (c.atk + 1) * (12 * c.str * c.advCoef * k + 8 * c.str * c.disCoef * k + 10 * c.dex) - 10 * c.atk * c.dex;
     var atkPerStr = (den === 0 ? NaN : num / den) - c.str;
-    var strPerDex = (1 + 0.9 * c.mastery) * (1.2 * c.advCoef + 0.8 * c.disCoef);
+    var strPerDex = (1 + 0.9 * mastery) * (1.2 * c.advCoef + 0.8 * c.disCoef);
     return { atkPerStr: atkPerStr, strPerDex: strPerDex, atkPerDex: atkPerStr * strPerDex };
   }
 
@@ -188,9 +202,10 @@
 
   /* ------------------------- 状态 ------------------------- */
 
-  var STORAGE_KEY = 'pldc-state-v1';
+  var STORAGE_KEY = 'pldc-state-v2';
 
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
 
   function num(v, d) {
     if (v === '' || v === null || typeof v === 'undefined') return 0;
@@ -209,6 +224,11 @@
     return d;
   }
 
+  function pickWeapon(v, d) {
+    for (var i = 0; i < WEAPONS.length; i++) if (WEAPONS[i].text === v) return v;
+    return d;
+  }
+
   function pickText(v, list, d) {
     for (var i = 0; i < list.length; i++) if (list[i].text === v) return v;
     return d;
@@ -217,63 +237,226 @@
   function normalizeSlot(src, base, isConvert) {
     var o = clone(base);
     if (!src || typeof src !== 'object') return o;
+    if (typeof src.name === 'string' && src.name.trim()) o.name = src.name.trim().slice(0, 12);
+    if (isConvert) {
+      for (var kc in base) {
+        if (!base.hasOwnProperty(kc) || kc === 'name') continue;
+        o[kc] = num(src[kc], base[kc]);
+      }
+      return o;
+    }
+    o.weapon = pickWeapon(src.weapon, base.weapon);
+    o.relation = pickRelation(src.relation, base.relation);
+    o.spd = pickSpd(src.spd, base.spd);
     for (var k in base) {
-      if (!base.hasOwnProperty(k)) continue;
-      if (k === 'name') { o.name = typeof src.name === 'string' && src.name.trim() ? src.name.slice(0, 12) : base.name; continue; }
-      if (k === 'relation') { o.relation = pickRelation(src.relation, base.relation); continue; }
-      if (k === 'spd' && !isConvert) { o.spd = pickSpd(src.spd, base.spd); continue; }
+      if (!base.hasOwnProperty(k) || k === 'name' || k === 'weapon' || k === 'relation' || k === 'spd') continue;
       o[k] = num(src[k], base[k]);
     }
     return o;
   }
 
   function normalize(raw) {
-    var d = clone(DEFAULTS);
-    if (!raw || typeof raw !== 'object') return d;
-    var out = { crit: pickText(raw.crit, CRIT_OPTIONS, DEFAULTS.crit), echo: pickText(raw.echo, ECHO_OPTIONS, DEFAULTS.echo) };
-    ['sword', 'blunt', 'convert'].forEach(function (mode) {
-      out[mode] = [];
-      for (var i = 0; i < 4; i++) {
-        out[mode].push(normalizeSlot(raw[mode] && raw[mode][i], DEFAULTS[mode][i], mode === 'convert'));
-      }
-    });
+    var out = {
+      crit: pickText(raw && raw.crit, CRIT_OPTIONS, DEFAULTS.crit),
+      echo: pickText(raw && raw.echo, ECHO_OPTIONS, DEFAULTS.echo),
+      columns: [],
+      convert: []
+    };
+    for (var i = 0; i < 4; i++) {
+      out.columns.push(normalizeSlot(raw && raw.columns && raw.columns[i], BASE[i], false));
+      out.convert.push(normalizeSlot(raw && raw.convert && raw.convert[i], CONVERT_BASE[i], true));
+    }
+    return out;
+  }
+
+  /* ------------------- 分享链接：紧凑编码 ------------------- */
+
+  // 与默认值不同的字段才写入；系数按 ×100 存整数，其余取整
+  var ENC_FIELDS = ['str', 'dex', 'atk', 'spd', 'mastery', 'advCoef', 'disCoef', 'subCoef', 'advRatio', 'disRatio', 'def', 'skill', 'buff'];
+  var COEF_KEYS = { advCoef: 1, disCoef: 1, subCoef: 1 };
+
+  function scaleVal(k, v) {
+    return Math.round((COEF_KEYS[k] ? v * 100 : v));
+  }
+
+  function critIndex(t) {
+    for (var i = 0; i < CRIT_OPTIONS.length; i++) if (CRIT_OPTIONS[i].text === t) return i;
+    return 0;
+  }
+
+  function echoIndex(t) {
+    for (var i = 0; i < ECHO_OPTIONS.length; i++) if (ECHO_OPTIONS[i].text === t) return i;
+    return 0;
+  }
+
+  function weaponIndex(t) {
+    for (var i = 0; i < WEAPONS.length; i++) if (WEAPONS[i].text === t) return i;
+    return 0;
+  }
+
+  function relationIndex(t) {
+    for (var i = 0; i < RELATION_OPTIONS.length; i++) if (RELATION_OPTIONS[i].text === t) return i;
+    return 0;
+  }
+
+  function pushVarint(arr, v) {
+    v = Math.max(0, Math.round(v));
+    while (v >= 0x80) {
+      arr.push((v & 0x7f) | 0x80);
+      v = Math.floor(v / 128);
+    }
+    arr.push(v);
+  }
+
+  function readVarint(bytes, st) {
+    var shift = 0, val = 0, b;
+    do {
+      if (st.i >= bytes.length) throw new Error('数据不完整');
+      b = bytes[st.i++];
+      val += (b & 0x7f) * Math.pow(2, shift);
+      shift += 7;
+    } while (b & 0x80);
+    return val;
+  }
+
+  function pushZig(arr, v) { pushVarint(arr, v >= 0 ? v * 2 : -v * 2 - 1); }
+  function readZig(bytes, st) { var z = readVarint(bytes, st); return z % 2 ? -(z + 1) / 2 : z / 2; }
+
+  function utf8Bytes(str) {
+    var out = [];
+    for (var i = 0; i < str.length; i++) {
+      var code = str.charCodeAt(i);
+      if (code < 0x80) out.push(code);
+      else if (code < 0x800) out.push(0xc0 | (code >> 6), 0x80 | (code & 63));
+      else if (code >= 0xd800 && code <= 0xdbff && i + 1 < str.length) {
+        var cp = 0x10000 + ((code - 0xd800) << 10) + (str.charCodeAt(i + 1) - 0xdc00);
+        i++;
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      } else out.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63));
+    }
+    return out;
+  }
+
+  function utf8Read(bytes, st, len) {
+    var end = st.i + len, out = '';
+    while (st.i < end) {
+      var b = bytes[st.i++], cp, extra;
+      if (b < 0x80) { cp = b; extra = 0; }
+      else if (b < 0xe0) { cp = b & 0x1f; extra = 1; }
+      else if (b < 0xf0) { cp = b & 0x0f; extra = 2; }
+      else { cp = b & 0x07; extra = 3; }
+      for (var e = 0; e < extra; e++) cp = (cp << 6) | (bytes[st.i++] & 0x3f);
+      if (cp > 0xffff) {
+        cp -= 0x10000;
+        out += String.fromCharCode(0xd800 + (cp >> 10), 0xdc00 + (cp & 0x3ff));
+      } else out += String.fromCharCode(cp);
+    }
+    return out;
+  }
+
+  function toB64(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromB64(str) {
+    var b = String(str).replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    var bin = atob(b), out = [];
+    for (var i = 0; i < bin.length; i++) out.push(bin.charCodeAt(i));
     return out;
   }
 
   function encodeState(s) {
-    var json = JSON.stringify(s);
-    return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    var bytes = [1, critIndex(s.crit), echoIndex(s.echo)];
+    for (var i = 0; i < 4; i++) {
+      var c = s.columns[i], b = BASE[i];
+      var mask = 0, payload = [];
+      if (c.weapon !== b.weapon) { mask |= 1; payload.push(weaponIndex(c.weapon)); }
+      for (var f = 0; f < ENC_FIELDS.length; f++) {
+        var k = ENC_FIELDS[f];
+        var cv = scaleVal(k, c[k]), bv = scaleVal(k, b[k]);
+        if (cv !== bv) { mask |= (1 << (f + 1)); pushZig(payload, cv); }
+      }
+      if (c.relation !== b.relation) { mask |= (1 << 14); payload.push(relationIndex(c.relation)); }
+      if (c.name !== b.name) { mask |= (1 << 15); var nb = utf8Bytes(c.name); pushVarint(payload, nb.length); for (var n = 0; n < nb.length; n++) payload.push(nb[n]); }
+      bytes.push(mask & 0xff, (mask >> 8) & 0xff);
+      for (var p = 0; p < payload.length; p++) bytes.push(payload[p]);
+    }
+    // 攻力敏换算表：四列 ×(4 系数/熟练度 + 力量/敏捷/攻击力)
+    var cfields = ['advCoef', 'disCoef', 'str', 'dex', 'atk', 'mastery'];
+    for (var j = 0; j < 4; j++) {
+      var cc = s.convert[j], cb = CONVERT_BASE[j];
+      var cmask = 0, cpay = [];
+      for (var q = 0; q < cfields.length; q++) {
+        var ck = cfields[q];
+        var a = scaleVal(ck, cc[ck]), d = scaleVal(ck, cb[ck]);
+        if (a !== d) { cmask |= (1 << q); pushZig(cpay, a); }
+      }
+      if (cc.name !== cb.name) { cmask |= (1 << 6); var cb2 = utf8Bytes(cc.name); pushVarint(cpay, cb2.length); for (var m = 0; m < cb2.length; m++) cpay.push(cb2[m]); }
+      bytes.push(cmask & 0xff);
+      for (var w = 0; w < cpay.length; w++) bytes.push(cpay[w]);
+    }
+    return toB64(bytes);
   }
+
+  var CONVERT_ENC_FIELDS = ['advCoef', 'disCoef', 'str', 'dex', 'atk', 'mastery'];
 
   function decodeState(str) {
-    var b = str.replace(/-/g, '+').replace(/_/g, '/');
-    while (b.length % 4) b += '=';
-    return JSON.parse(decodeURIComponent(escape(atob(b))));
-  }
+    var bytes = fromB64(str);
+    if (!bytes.length) throw new Error('空数据');
+    if (bytes[0] !== 1) {
+      // 兼容旧版 base64(JSON) 链接
+      var txt = utf8Read(bytes, { i: 0 }, bytes.length);
+      if (txt.charAt(0) === '{') return JSON.parse(txt);
+      throw new Error('未知格式');
+    }
 
-  function readHashState() {
-    var h = location.hash || '';
-    var i = h.indexOf('d=');
-    if (i < 0) return null;
-    try { return decodeState(h.slice(i + 2)); } catch (e) { return null; }
-  }
+    var st = { i: 1 };
+    var crit = CRIT_OPTIONS[readVarint(bytes, st)] || CRIT_OPTIONS[0];
+    var echo = ECHO_OPTIONS[readVarint(bytes, st)] || ECHO_OPTIONS[0];
+    var out = { crit: crit.text, echo: echo.text, columns: [], convert: [] };
 
-  function loadState() {
-    var fromHash = readHashState();
-    if (fromHash) return normalize(fromHash);
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return normalize(JSON.parse(raw));
-    } catch (e) { /* localStorage 不可用则忽略 */ }
-    return normalize(null);
-  }
+    for (var i = 0; i < 4; i++) {
+      var b = BASE[i];
+      var slot = { name: b.name };
+      var mask = bytes[st.i] | (bytes[st.i + 1] << 8);
+      st.i += 2;
+      slot.weapon = (mask & 1) ? (WEAPONS[bytes[st.i++]] || WEAPONS[0]).text : b.weapon;
+      for (var f = 0; f < ENC_FIELDS.length; f++) {
+        var k = ENC_FIELDS[f];
+        if (mask & (1 << (f + 1))) {
+          var v = readZig(bytes, st);
+          slot[k] = COEF_KEYS[k] ? v / 100 : v;
+        } else slot[k] = b[k];
+      }
+      slot.relation = (mask & (1 << 14)) ? (RELATION_OPTIONS[bytes[st.i++]] || RELATION_OPTIONS[0]).text : b.relation;
+      if (mask & (1 << 15)) {
+        var len = readVarint(bytes, st);
+        slot.name = utf8Read(bytes, st, len);
+      }
+      out.columns.push(slot);
+    }
 
-  var saveTimer = null;
-  function saveState() {
-    if (saveTimer) clearTimeout(saveTimer);
-    saveTimer = setTimeout(function () {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch (e) { /* 忽略配额错误 */ }
-    }, 300);
+    for (var j = 0; j < 4; j++) {
+      var cb = CONVERT_BASE[j];
+      var cslot = { name: cb.name };
+      var cmask = bytes[st.i++];
+      for (var q = 0; q < CONVERT_ENC_FIELDS.length; q++) {
+        var ck = CONVERT_ENC_FIELDS[q];
+        if (cmask & (1 << q)) {
+          var cv = readZig(bytes, st);
+          cslot[ck] = COEF_KEYS[ck] ? cv / 100 : cv;
+        } else cslot[ck] = cb[ck];
+      }
+      if (cmask & (1 << 6)) {
+        var clen = readVarint(bytes, st);
+        cslot.name = utf8Read(bytes, st, clen);
+      }
+      out.convert.push(cslot);
+    }
+    return out;
   }
 
   /* ------------------------- 视图 ------------------------- */
@@ -286,7 +469,7 @@
     for (var i = 0; i < SPEED_TABLE.length; i++) {
       var s = SPEED_TABLE[i];
       out += '<option value="' + s.level + '"' + (s.level === cur ? ' selected' : '') + '>' +
-        s.text + ' · ' + s.delay + 'ms</option>';
+        s.level + ' 档 · ' + s.delay + 'ms</option>';
     }
     return out;
   }
@@ -301,87 +484,97 @@
     return out;
   }
 
+  function weaponOptions(cur) {
+    var out = '';
+    for (var i = 0; i < WEAPONS.length; i++) {
+      out += '<option value="' + WEAPONS[i].text + '"' + (WEAPONS[i].text === cur ? ' selected' : '') + '>' +
+        WEAPONS[i].text + '</option>';
+    }
+    return out;
+  }
+
   function cellControl(mode, col, f, slot) {
     var base = ' data-mode="' + mode + '" data-col="' + col + '" data-key="' + f.key + '"';
-    if (f.kind === 'speed') {
-      return '<select class="pldc-input pldc-select"' + base + '>' + speedOptions(slot.spd) + '</select>';
-    }
-    if (f.kind === 'relation') {
-      return '<select class="pldc-input pldc-select"' + base + '>' + relationOptions(slot.relation) + '</select>';
-    }
+    if (f.kind === 'speed') return '<select class="pldc-input pldc-select"' + base + '>' + speedOptions(slot.spd) + '</select>';
+    if (f.kind === 'relation') return '<select class="pldc-input pldc-select"' + base + '>' + relationOptions(slot.relation) + '</select>';
+    if (f.kind === 'weapon') return '<select class="pldc-input pldc-select"' + base + '>' + weaponOptions(slot.weapon) + '</select>';
     var attrs = ' type="number" inputmode="decimal" step="' + (f.step || 1) + '"' +
       (typeof f.min === 'number' ? ' min="' + f.min + '"' : '') +
       (typeof f.max === 'number' ? ' max="' + f.max + '"' : '');
     return '<input class="pldc-input"' + base + attrs + ' value="' + slot[f.key] + '">';
   }
 
-  function weaponPanel(mode) {
-    var slots = S[mode];
-    var html = '<section class="pldc-panel" data-panel="' + mode + '" hidden>' +
-      '<div class="pldc-cards" data-cards="' + mode + '"></div>' +
-      '<p class="pldc-verdict" data-verdict="' + mode + '"></p>' +
+  function hintHtml(f) {
+    return '<span class="pldc-hint" data-hint="' + esc(f.hint) + '" tabindex="0" role="note" aria-label="说明">?</span>';
+  }
+
+  function calcPanel() {
+    var html = '<section class="pldc-panel" data-panel="calc">' +
+      '<div class="pldc-cards"></div>' +
+      '<p class="pldc-warn" data-warn></p>' +
       '<div class="pldc-tablewrap"><table class="pldc-table">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
 
     for (var i = 0; i < 4; i++) {
       html += '<th scope="col" class="pldc-colhead">' +
-        '<input class="pldc-name" data-mode="' + mode + '" data-col="' + i + '" data-key="name" ' +
-        'type="text" maxlength="12" spellcheck="false" value="' + esc(slots[i].name) + '" title="点击修改方案名称">' +
+        '<input class="pldc-name" data-mode="calc" data-col="' + i + '" data-key="name" ' +
+        'type="text" maxlength="12" spellcheck="false" value="' + esc(S.columns[i].name) + '" title="点击修改方案名称">' +
         '</th>';
     }
     html += '</tr></thead><tbody>';
 
-    for (var f = 0; f < WEAPON_FIELDS.length; f++) {
-      var fld = WEAPON_FIELDS[f];
-      html += '<tr><th scope="row" class="pldc-rowhead" title="' + esc(fld.hint) + '">' +
-        esc(fld.label) + '<span class="pldc-tip" aria-hidden="true">?</span></th>';
+    for (var f = 0; f < FIELDS.length; f++) {
+      var fld = FIELDS[f];
+      html += '<tr' + (fld.key === 'weapon' ? ' class="pldc-row-weapon"' : '') + '>' +
+        '<th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < 4; c++) {
-        html += '<td class="pldc-cell">' + cellControl(mode, c, fld, slots[c]) +
-          '<button type="button" class="pldc-sync" data-act="sync" data-mode="' + mode + '" data-col="' + c +
-          '" data-key="' + fld.key + '" title="把该值同步到本表另外三列" aria-label="同步">⇊</button></td>';
+        html += '<td class="pldc-cell">' + cellControl('calc', c, fld, S.columns[c]);
+        if (!fld.noSync) {
+          html += '<button type="button" class="pldc-sync" data-act="sync" data-mode="calc" data-col="' + c +
+            '" data-key="' + fld.key + '" title="把该值同步到本表另外三列" aria-label="同步">⇊</button>';
+        }
+        html += '</td>';
       }
       html += '</tr>';
     }
 
     html += '<tr class="pldc-divider"><th colspan="5" scope="colgroup">计算结果</th></tr>';
-    for (var r = 0; r < WEAPON_RESULTS.length; r++) {
-      var res = WEAPON_RESULTS[r];
+    for (var r = 0; r < RESULTS.length; r++) {
+      var res = RESULTS[r];
       html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '">' +
         '<th scope="row" class="pldc-rowhead">' + esc(res.label) + '</th>';
       for (var c2 = 0; c2 < 4; c2++) {
-        html += '<td class="pldc-cell pldc-out" data-out="' + mode + '" data-col="' + c2 +
-          '" data-key="' + res.key + '"></td>';
+        html += '<td class="pldc-cell pldc-out" data-out="calc" data-col="' + c2 + '" data-key="' + res.key + '"></td>';
       }
       html += '</tr>';
     }
     html += '</tbody></table></div>' +
-      '<p class="pldc-note">灰色小字为可编辑参数；把鼠标移到参数名上可看到原表说明。「⇊」按钮把该格数值同步到本表另外三列。' +
-      '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。</p>' +
+      '<p class="pldc-note">每列可单独选武器类型；切换武器会按该武器重置主属性系数、熟练度与优劣比例，之后仍可手动改。' +
+      '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
+      '「⇊」把该格数值同步到本表另外三列；鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
       '</section>';
     return html;
   }
 
   function convertPanel() {
-    var slots = S.convert;
     var html = '<section class="pldc-panel" data-panel="convert" hidden>' +
       '<p class="pldc-verdict">把四把武器的力量 / 敏捷 / 攻击力填进去，得到「1 攻击 ≈ X 点力量」的等效换算。' +
-      '本表算整体输出提升，不是面板最高值；未包含英雄回声（回声请在环破页勾选）。</p>' +
+      '本表算整体输出提升，不是面板最高值；未包含英雄回声。</p>' +
       '<div class="pldc-tablewrap"><table class="pldc-table">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
     for (var i = 0; i < 4; i++) {
       html += '<th scope="col" class="pldc-colhead">' +
         '<input class="pldc-name" data-mode="convert" data-col="' + i + '" data-key="name" ' +
-        'type="text" maxlength="12" spellcheck="false" value="' + esc(slots[i].name) + '" title="点击修改武器名称">' +
+        'type="text" maxlength="12" spellcheck="false" value="' + esc(S.convert[i].name) + '" title="点击修改武器名称">' +
         '</th>';
     }
     html += '</tr></thead><tbody>';
 
     for (var f = 0; f < CONVERT_FIELDS.length; f++) {
       var fld = CONVERT_FIELDS[f];
-      html += '<tr><th scope="row" class="pldc-rowhead" title="' + esc(fld.hint) + '">' +
-        esc(fld.label) + '<span class="pldc-tip" aria-hidden="true">?</span></th>';
+      html += '<tr><th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < 4; c++) {
-        html += '<td class="pldc-cell">' + cellControl('convert', c, fld, slots[c]) +
+        html += '<td class="pldc-cell">' + cellControl('convert', c, fld, S.convert[c]) +
           '<button type="button" class="pldc-sync" data-act="sync" data-mode="convert" data-col="' + c +
           '" data-key="' + fld.key + '" title="把该值同步到本表另外三列" aria-label="同步">⇊</button></td>';
       }
@@ -394,16 +587,13 @@
       html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '">' +
         '<th scope="row" class="pldc-rowhead">' + esc(res.label) + '</th>';
       for (var c2 = 0; c2 < 4; c2++) {
-        html += '<td class="pldc-cell pldc-out" data-out="convert" data-col="' + c2 +
-          '" data-key="' + res.key + '"></td>';
+        html += '<td class="pldc-cell pldc-out" data-out="convert" data-col="' + c2 + '" data-key="' + res.key + '"></td>';
       }
       html += '</tr>';
     }
-
     html += '</tbody></table></div>' +
       '<p class="pldc-note">读法：攻击 / 力量收益 = 7.2 表示 1 点攻击力与 7.2 点力量的输出提升相同；' +
-      '攻击 / 敏捷收益 = 25.5 表示 1 点攻击与 25.5 点敏捷等价。' +
-      '未计算英雄回声，也未计算压制术与伤害上限。</p>' +
+      '攻击 / 敏捷收益 = 25.5 表示 1 点攻击与 25.5 点敏捷等价。未计算英雄回声，也未计算压制术与伤害上限。</p>' +
       '</section>';
     return html;
   }
@@ -418,18 +608,19 @@
       echo += '<option value="' + ECHO_OPTIONS[j].text + '"' + (ECHO_OPTIONS[j].text === S.echo ? ' selected' : '') + '>' +
         ECHO_OPTIONS[j].text + '</option>';
     }
-    return '<label class="pldc-field" title="I12：计算暴击增益的方式，暴击率与暴击伤害自动跟随">' +
-      '<span>暴击增益</span><select class="pldc-input pldc-select" data-global="crit">' + crit + '</select></label>' +
-      '<label class="pldc-field" title="I15：英雄回声，攻击力按 INT(攻击力*1.04) 计算">' +
-      '<span>英雄回声</span><select class="pldc-input pldc-select" data-global="echo">' + echo + '</select></label>' +
+    return '<label class="pldc-field">' +
+      '<span>暴击增益</span><span class="pldc-hint" data-hint="I12：暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。" tabindex="0" role="note">?</span>' +
+      '<select class="pldc-input pldc-select" data-global="crit">' + crit + '</select></label>' +
+      '<label class="pldc-field">' +
+      '<span>英雄回声</span><span class="pldc-hint" data-hint="I15：英雄回声，选择计算后攻击力按 INT(攻击力 × 1.04) 参与面板计算。" tabindex="0" role="note">?</span>' +
+      '<select class="pldc-input pldc-select" data-global="echo">' + echo + '</select></label>' +
       '<span class="pldc-grow"></span>' +
       '<button type="button" class="pldc-btn" data-act="share">复制分享链接</button>' +
       '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset">恢复默认</button>';
   }
 
   var TABS = [
-    { key: 'sword',   label: '剑 · 环破' },
-    { key: 'blunt',   label: '钝器 · 环破' },
+    { key: 'calc',    label: '环破伤害计算' },
     { key: 'convert', label: '攻力敏换算' },
     { key: 'guide',   label: '使用说明' }
   ];
@@ -444,29 +635,26 @@
 
   /* ------------------------- 刷新 ------------------------- */
 
-  function resultsOf(mode) {
+  function resultsOf() {
     var out = [];
-    for (var i = 0; i < 4; i++) out.push(computeColumn(S[mode][i], S.crit, S.echo));
+    for (var i = 0; i < 4; i++) out.push(computeColumn(S.columns[i], S.crit, S.echo));
     return out;
   }
 
   function setText(node, text) { if (node && node.textContent !== text) node.textContent = text; }
 
-  function refreshWeapon(mode) {
-    var res = resultsOf(mode);
-    var best = -Infinity, worst = Infinity;
-    for (var i = 0; i < 4; i++) {
-      if (res[i].dpm > best) best = res[i].dpm;
-      if (res[i].dpm < worst) worst = res[i].dpm;
-    }
+  function refreshCalc() {
+    var res = resultsOf();
+    var best = -Infinity;
+    for (var i = 0; i < 4; i++) if (res[i].dpm > best) best = res[i].dpm;
 
-    var cells = root.querySelectorAll('[data-out="' + mode + '"]');
+    var cells = root.querySelectorAll('[data-out="calc"]');
     for (var n = 0; n < cells.length; n++) {
       var cell = cells[n];
       var col = parseInt(cell.getAttribute('data-col'), 10);
       var key = cell.getAttribute('data-key');
       var spec = null;
-      for (var q = 0; q < WEAPON_RESULTS.length; q++) if (WEAPON_RESULTS[q].key === key) spec = WEAPON_RESULTS[q];
+      for (var q = 0; q < RESULTS.length; q++) if (RESULTS[q].key === key) spec = RESULTS[q];
       if (!spec) continue;
       setText(cell, fmtNum(res[col][key], spec.dec));
       cell.classList.toggle('pldc-best', key === 'dpm' && res[col].dpm === best && best > 0);
@@ -478,30 +666,27 @@
       var isBest = r.dpm === best && best > 0;
       var delta = best > 0 && r.dpm > 0 && r.dpm < best ? '−' + fmtNum((1 - r.dpm / best) * 100, 1) + '%' : '';
       cards.push('<div class="pldc-card' + (isBest ? ' pldc-card-best' : '') + '">' +
-        '<div class="pldc-card-top"><span class="pldc-card-name">' + esc(S[mode][c].name) + '</span>' +
+        '<div class="pldc-card-top"><span class="pldc-card-name">' + esc(S.columns[c].name) + '</span>' +
         (isBest ? '<span class="pldc-pill">最高</span>' : (delta ? '<span class="pldc-pill pldc-pill-dim">' + delta + '</span>' : '')) +
         '</div>' +
         '<div class="pldc-card-main">' + fmtNum(r.dpm, 2) + '<small>万 / 分钟</small></div>' +
         '<div class="pldc-card-sub">单次 ' + fmtNum(r.hit, 2) + ' · 面板 ' + fmtNum(r.panel, 2) + '</div>' +
         '</div>');
     }
-    var cardBox = root.querySelector('[data-cards="' + mode + '"]');
+    var cardBox = root.querySelector('.pldc-cards');
     if (cardBox) cardBox.innerHTML = cards.join('');
 
-    var verdict = root.querySelector('[data-verdict="' + mode + '"]');
-    if (verdict) {
-      var bestIdx = res.map(function (x) { return x.dpm; }).indexOf(best);
-      var gap = worst > 0 ? (1 - worst / best) * 100 : 0;
-      var warn = '';
+    var warnBox = root.querySelector('[data-warn]');
+    if (warnBox) {
+      var msgs = [];
       for (var w = 0; w < 4; w++) {
         if (Math.abs(res[w].ratioSum - 100) > 0.001) {
-          warn = '<span class="pldc-warn">注意：' + esc(S[mode][w].name) + ' 的优势 + 劣势比例为 ' +
-            fmtNum(res[w].ratioSum, 1) + '%，不等于 100%</span>';
-          break;
+          msgs.push(esc(S.columns[w].name) + ' 的优势 ' + fmtNum(S.columns[w].advRatio, 1) + '% + 劣势 ' +
+            fmtNum(S.columns[w].disRatio, 1) + '% = ' + fmtNum(res[w].ratioSum, 1) + '%');
         }
       }
-      verdict.innerHTML = '本表最高：<b>' + esc(S[mode][bestIdx].name) + '</b> · ' + fmtNum(best, 2) +
-        ' 万 / 分钟' + (gap > 0.05 ? '，最低方案比它低 ' + fmtNum(gap, 1) + '%' : '') + '。' + warn;
+      warnBox.innerHTML = msgs.length ? '注意：' + msgs.join('；') + '，合计不等于 100%，结果可能与预期不符。' : '';
+      warnBox.hidden = !msgs.length;
     }
   }
 
@@ -520,31 +705,48 @@
   }
 
   function refreshAll() {
-    refreshWeapon('sword');
-    refreshWeapon('blunt');
+    refreshCalc();
     refreshConvert();
   }
 
   /* ------------------------- 交互 ------------------------- */
 
-  function readControlValue(node) {
-    if (node.tagName === 'SELECT') return node.value;
-    if (node.getAttribute('data-key') === 'name') return node.value;
-    if (node.value === '') return '';
-    return node.value;
-  }
+  function slotsOf(mode) { return mode === 'convert' ? S.convert : S.columns; }
 
   function writeSlot(mode, col, key, raw) {
-    var slot = S[mode][col];
-    if (key === 'name') { slot.name = String(raw).slice(0, 12) || SLOT_LABELS[col]; return; }
+    var slot = slotsOf(mode)[col];
+    if (key === 'name') {
+      var fallback = (mode === 'convert' ? CONVERT_BASE[col] : BASE[col]).name;
+      slot.name = String(raw).slice(0, 12) || fallback;
+      return;
+    }
     if (key === 'relation') { slot.relation = pickRelation(raw, slot.relation); return; }
-    if (key === 'spd' && mode !== 'convert') { slot.spd = pickSpd(raw, slot.spd); return; }
+    if (key === 'spd') { slot.spd = pickSpd(raw, slot.spd); return; }
+    if (key === 'weapon') {
+      var w = weaponBy(pickWeapon(raw, slot.weapon));
+      slot.weapon = w.text;
+      slot.advCoef = w.advCoef;
+      slot.disCoef = w.disCoef;
+      slot.mastery = w.mastery;
+      slot.advRatio = w.advRatio;
+      slot.disRatio = w.disRatio;
+      return;
+    }
     slot[key] = num(raw, 0);
+  }
+
+  function syncDerived(mode, col) {
+    var slot = slotsOf(mode)[col];
+    var keys = ['advCoef', 'disCoef', 'mastery', 'advRatio', 'disRatio'];
+    for (var i = 0; i < keys.length; i++) {
+      var input = root.querySelector('[data-mode="' + mode + '"][data-col="' + col + '"][data-key="' + keys[i] + '"]');
+      if (input) input.value = String(slot[keys[i]]);
+    }
   }
 
   function onInput(e) {
     var t = e.target;
-    var g = t.getAttribute('data-global');
+    var g = t.getAttribute && t.getAttribute('data-global');
     if (g) {
       if (g === 'crit') S.crit = pickText(t.value, CRIT_OPTIONS, S.crit);
       if (g === 'echo') S.echo = pickText(t.value, ECHO_OPTIONS, S.echo);
@@ -552,26 +754,74 @@
       saveState();
       return;
     }
-    var mode = t.getAttribute('data-mode');
-    var col = t.getAttribute('data-col');
-    var key = t.getAttribute('data-key');
+    var mode = t.getAttribute && t.getAttribute('data-mode');
+    var col = t.getAttribute && t.getAttribute('data-col');
+    var key = t.getAttribute && t.getAttribute('data-key');
     if (!mode || col === null || !key) return;
-    writeSlot(mode, parseInt(col, 10), key, readControlValue(t));
-    if (mode === 'convert') refreshConvert(); else refreshWeapon(mode);
+    writeSlot(mode, parseInt(col, 10), key, t.value);
+    if (key === 'weapon') syncDerived(mode, parseInt(col, 10));
+    if (mode === 'convert') refreshConvert(); else refreshCalc();
     saveState();
   }
 
   function onBlur(e) {
     var t = e.target;
     if (!t.getAttribute || !t.getAttribute('data-key')) return;
-    if (t.getAttribute('data-key') === 'name') return;
-    if (t.tagName === 'SELECT') return;
+    var key = t.getAttribute('data-key');
+    if (key === 'name' || t.tagName === 'SELECT') return;
     var mode = t.getAttribute('data-mode');
     var col = parseInt(t.getAttribute('data-col'), 10);
-    var key = t.getAttribute('data-key');
     if (!mode || isNaN(col)) return;
-    var val = S[mode][col][key];
+    var val = slotsOf(mode)[col][key];
     if (t.value !== String(val)) t.value = String(val);
+  }
+
+  /* --- 说明气泡 --- */
+
+  var tipEl = null, tipTimer = null;
+
+  function ensureTip() {
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'pldc-tooltip';
+      document.body.appendChild(tipEl);
+    }
+    return tipEl;
+  }
+
+  function placeTip(target, el) {
+    var r = target.getBoundingClientRect();
+    var w = el.offsetWidth, h = el.offsetHeight;
+    var left = r.left + r.width / 2 - w / 2;
+    left = Math.max(8, Math.min(left, (window.innerWidth || 0) - w - 8));
+    var top = r.top - h - 10;
+    if (top < 8) top = r.bottom + 10;
+    el.style.left = Math.round(left) + 'px';
+    el.style.top = Math.round(top) + 'px';
+  }
+
+  function showTip(target) {
+    var text = target.getAttribute('data-hint');
+    if (!text) return;
+    var el = ensureTip();
+    el.textContent = text;
+    el.classList.add('is-on');
+    placeTip(target, el);
+    if (tipTimer) clearTimeout(tipTimer);
+    tipTimer = setTimeout(hideTip, 9000);
+  }
+
+  function hideTip() {
+    if (tipEl) tipEl.classList.remove('is-on');
+    if (tipTimer) { clearTimeout(tipTimer); tipTimer = null; }
+  }
+
+  function closestHint(node) {
+    while (node && node !== document) {
+      if (node.getAttribute && node.getAttribute('data-hint')) return node;
+      node = node.parentNode;
+    }
+    return null;
   }
 
   var toastTimer = null;
@@ -591,7 +841,7 @@
 
   function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(function () { toast('链接已复制'); }, function () { toast('复制失败，请手动复制地址栏'); });
+      navigator.clipboard.writeText(text).then(function () { toast('短链接已复制（' + text.length + ' 字符）'); }, function () { toast('复制失败，请手动复制地址栏'); });
       return;
     }
     var ta = document.createElement('textarea');
@@ -601,7 +851,7 @@
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand('copy'); toast('链接已复制'); } catch (e) { toast('复制失败，请手动复制地址栏'); }
+    try { document.execCommand('copy'); toast('短链接已复制（' + text.length + ' 字符）'); } catch (e) { toast('复制失败，请手动复制地址栏'); }
     document.body.removeChild(ta);
   }
 
@@ -615,7 +865,7 @@
       panels[p].hidden = panels[p].getAttribute('data-panel') !== key;
     }
     var bar = document.getElementById('pldc-toolbar');
-    if (bar) bar.hidden = key === 'convert' || key === 'guide';
+    if (bar) bar.hidden = key !== 'calc';
   }
 
   function onClick(e) {
@@ -645,14 +895,14 @@
       var mode = btn.getAttribute('data-mode');
       var col = parseInt(btn.getAttribute('data-col'), 10);
       var key = btn.getAttribute('data-key');
-      var val = S[mode][col][key];
+      var val = slotsOf(mode)[col][key];
       for (var i = 0; i < 4; i++) {
         if (i === col) continue;
         writeSlot(mode, i, key, val);
         var input = root.querySelector('[data-mode="' + mode + '"][data-col="' + i + '"][data-key="' + key + '"]');
         if (input) input.value = val;
       }
-      if (mode === 'convert') refreshConvert(); else refreshWeapon(mode);
+      if (mode === 'convert') refreshConvert(); else refreshCalc();
       saveState();
       toast('已同步到本表四列');
       return;
@@ -665,12 +915,37 @@
     var tabs = document.getElementById('pldc-tabs');
     if (tabs) tabs.innerHTML = tabsHtml();
     var panels = document.getElementById('pldc-panels');
-    if (panels) panels.innerHTML = weaponPanel('sword') + weaponPanel('blunt') + convertPanel();
+    if (panels) panels.innerHTML = calcPanel() + convertPanel();
   }
 
   function rebuild() {
     build();
     refreshAll();
+  }
+
+  var saveTimer = null;
+  function saveState() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S)); } catch (e) { /* 忽略配额错误 */ }
+    }, 300);
+  }
+
+  function readHashState() {
+    var h = location.hash || '';
+    var i = h.indexOf('d=');
+    if (i < 0) return null;
+    try { return normalize(decodeState(h.slice(i + 2))); } catch (e) { return null; }
+  }
+
+  function loadState() {
+    var fromHash = readHashState();
+    if (fromHash) return fromHash;
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return normalize(JSON.parse(raw));
+    } catch (e) { /* localStorage 不可用则忽略 */ }
+    return normalize(null);
   }
 
   function init() {
@@ -682,8 +957,34 @@
     root.addEventListener('change', onInput);
     root.addEventListener('blur', onBlur, true);
     root.addEventListener('click', onClick);
+
+    // 悬停 / 触摸显示参数说明
+    root.addEventListener('pointerover', function (e) {
+      var h = closestHint(e.target);
+      if (h) showTip(h);
+    });
+    root.addEventListener('pointerout', function (e) {
+      var h = closestHint(e.target);
+      if (h && !(h.contains && h.contains(e.relatedTarget))) hideTip();
+    });
+    root.addEventListener('focusin', function (e) {
+      var h = closestHint(e.target);
+      if (h) showTip(h);
+    });
+    root.addEventListener('focusout', hideTip);
+    root.addEventListener('pointerdown', function (e) {
+      if (e.pointerType !== 'touch') return;
+      var h = closestHint(e.target);
+      if (h) { e.preventDefault(); showTip(h); } else hideTip();
+    });
+    document.addEventListener('pointerdown', function (e) {
+      if (!closestHint(e.target) && e.pointerType !== 'touch') hideTip();
+    }, true);
+    window.addEventListener('scroll', hideTip, true);
+    window.addEventListener('resize', hideTip);
+
     refreshAll();
-    setTab('sword');
+    setTab('calc');
     root.setAttribute('data-ready', '1');
   }
 
@@ -693,7 +994,12 @@
     computeColumn: computeColumn,
     computeConvert: computeConvert,
     normalize: normalize,
+    encodeState: encodeState,
+    decodeState: decodeState,
     DEFAULTS: DEFAULTS,
+    BASE: BASE,
+    CONVERT_BASE: CONVERT_BASE,
+    WEAPONS: WEAPONS,
     SPEED_TABLE: SPEED_TABLE,
     CRIT_OPTIONS: CRIT_OPTIONS,
     ECHO_OPTIONS: ECHO_OPTIONS,
