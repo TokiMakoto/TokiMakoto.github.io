@@ -128,7 +128,7 @@
   flex-wrap: wrap;
   gap: 6px;
   border-bottom: 1px solid var(--pldc-line);
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
 
 .pldc .pldc-tab {

@@ -51,9 +51,9 @@
 
   // 属性增益（原表「增益百分比」一栏）：100 / 130 / 140
   var BUFF_OPTIONS = [
-    { text: '圣属性 140%', pct: 140 },
-    { text: '冰火雷属性 130%', pct: 130 },
-    { text: '不开属性 100%', pct: 100 }
+    { text: '圣属性（140%）', pct: 140 },
+    { text: '冰火雷属性（130%）', pct: 130 },
+    { text: '不开属性（100%）', pct: 100 }
   ];
 
   var HINT_WEAPON = '选好武器类型后，下面的优势 / 劣势主属性系数、熟练度、优劣比例会按该武器自动带出，仍可手动改。' +
@@ -750,10 +750,14 @@
 
   function refreshCalc() {
     var res = resultsOf();
-    var best = -Infinity, bestIdx = -1;
+    var best = -Infinity;
     for (var i = 0; i < res.length; i++) {
-      if (res[i].dpm > best) { best = res[i].dpm; bestIdx = i; }
+      if (res[i].dpm > best) best = res[i].dpm;
     }
+    // 并列最高时统一显示「并列最高」；只有唯一最高时才写「最高」
+    var bestCount = 0;
+    for (var i2 = 0; i2 < res.length; i2++) if (best > 0 && res[i2].dpm === best) bestCount++;
+    var bestLabel = bestCount > 1 ? '并列最高' : '最高';
 
     var cells = root.querySelectorAll('[data-out="calc"]');
     for (var n = 0; n < cells.length; n++) {
@@ -774,7 +778,7 @@
       var delta = best > 0 && r.dpm > 0 && r.dpm < best ? '−' + fmtNum((1 - r.dpm / best) * 100, 1) + '%' : '';
       cards.push('<div class="pldc-card' + (isBest ? ' pldc-card-best' : '') + '">' +
         '<div class="pldc-card-top"><span class="pldc-card-name">' + esc(S.columns[c].name) + '</span>' +
-        (isBest ? '<span class="pldc-pill">最高</span>' : (delta ? '<span class="pldc-pill pldc-pill-dim">' + delta + '</span>' : '')) +
+        (isBest ? '<span class="pldc-pill">' + bestLabel + '</span>' : (delta ? '<span class="pldc-pill pldc-pill-dim">' + delta + '</span>' : '')) +
         '</div>' +
         '<div class="pldc-card-main">' + fmtNum(r.dpm, 2) + '<small>万 / 分钟</small></div>' +
         '<div class="pldc-card-sub">面板上限 ' + fmtNum(r.advHi, 2) + '</div>' +
