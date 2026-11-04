@@ -56,28 +56,26 @@
     { text: '不开属性（100%）', pct: 100 }
   ];
 
-  var HINT_WEAPON = '选好武器类型后，下面的优势 / 劣势主属性系数、熟练度、优劣比例会按该武器自动带出，仍可手动改。' +
-    '单手剑 1 / 1、60%、100% / 0%；双手剑 1.15 / 1.15、60%、100% / 0%；' +
-    '单手钝器 1.1 / 0.8、75%、60% / 40%；双手钝器 1.2 / 0.85、75%、60% / 40%。';
+  var HINT_WEAPON = '选好武器类型后，优势 / 劣势主属性系数、熟练度、优劣比例会自动填写';
 
   var FIELDS = [
     { key: 'weapon',   label: '武器类型',       kind: 'weapon',   noSync: true, hint: HINT_WEAPON },
-    { key: 'str',      label: '力量',           kind: 'num', step: 1,  hint: '角色力量总和，包括技能、装备及家族等。' },
-    { key: 'dex',      label: '敏捷',           kind: 'num', step: 1,  hint: '角色敏捷总和，包括技能、装备及家族等。' },
-    { key: 'atk',      label: '攻击力总和',     kind: 'num', step: 1,  hint: '武器 / 手套 / 盾牌 / 护肩等攻击力合计。' },
-    { key: 'spd',      label: '攻速',           kind: 'speed',        hint: '填上快速、急速、粽子等 buff 后的攻速档位。2 档最快（630ms），7 档最慢（900ms）。' },
-    { key: 'mastery',  label: '熟练度 %',       kind: 'num', step: 1,  hint: '精通点满：剑 60%，钝器 75%。原表 0.6 / 0.75，本页按百分比填写。' },
-    { key: 'advCoef',  label: '优势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动带出，一般无需改动。' },
-    { key: 'disCoef',  label: '劣势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动带出，一般无需改动。' },
-    { key: 'subCoef',  label: '副属性系数',     kind: 'num', step: 0.01, hint: '武器系数，默认 1，一般无需改动。' },
-    { key: 'advRatio', label: '优势比例 %',     kind: 'num', step: 1,  hint: '由劈刺比决定：环破 3:2，剑不分优劣填 100%，钝器填 60%。' },
-    { key: 'disRatio', label: '劣势比例 %',     kind: 'num', step: 1,  hint: '剑填 0%，钝器填 40%。优势比例 + 劣势比例应为 100%。' },
-    { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,  hint: '怪物固有属性，物理防御力数值；打木桩填 0。' },
-    { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10, hint: '环破点满技改 580%，原表写 5.8。' },
-    { key: 'buff',     label: '增益百分比',     kind: 'buff',          hint: '属性增益：圣属性 140%（圣 buff）、冰火雷属性 130%（技改）、不开属性 100%。' },
-    { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性 buff 点满：克制 150% / 非克制 100% / 抗性 50%。' },
-    { key: 'crit',     label: '暴击增益',       kind: 'crit',          hint: '暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。' },
-    { key: 'echo',     label: '英雄回声',       kind: 'echo',          hint: '选择计算后，攻击力按 INT(攻击力 × 1.04) 参与面板计算。' }
+    { key: 'str',      label: '力量',           kind: 'num', step: 1,  hint: '角色力量总和' },
+    { key: 'dex',      label: '敏捷',           kind: 'num', step: 1,  hint: '角色敏捷总和' },
+    { key: 'atk',      label: '攻击力总和',     kind: 'num', step: 1,  hint: '角色武器 / 手套 / 盾牌 / 护肩等带有攻击力的装备以及药水提供的攻击力数值之和' },
+    { key: 'spd',      label: '攻速',           kind: 'speed',        hint: '填写快速、极速、药水等 buff 后的攻速档位，详见使用说明' },
+    { key: 'mastery',  label: '熟练度 %',       kind: 'num', step: 1,  hint: '默认剑 60%，钝器 75%，一般无需改动' },
+    { key: 'advCoef',  label: '优势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动填写，一般无需改动' },
+    { key: 'disCoef',  label: '劣势主属性系数', kind: 'num', step: 0.01, hint: '武器系数，切换武器类型时自动填写，一般无需改动' },
+    { key: 'subCoef',  label: '副属性系数',     kind: 'num', step: 0.01, hint: '副属性系数，切换武器类型时自动填写，一般无需改动' },
+    { key: 'advRatio', label: '优势比例 %',     kind: 'num', step: 1,  hint: '由劈刺比决定，剑不分优劣填 100%，钝器填 60%' },
+    { key: 'disRatio', label: '劣势比例 %',     kind: 'num', step: 1,  hint: '由劈刺比决定，剑不分优劣填 0%，钝器填 40%' },
+    { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,  hint: '怪物固有属性，物理防御力数值；打木桩填 0，狮子王 2100 防御，黑龙头部 1800 防御左右，手部腿部 1400 防御左右，可自行查询。若需要计算压制术则自行计算，例如压制后狮子王防御力为 1680' },
+    { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10, hint: '连环环破伤害倍率' },
+    { key: 'buff',     label: '增益百分比',     kind: 'buff',          hint: '属性 BUFF 的伤害增益量' },
+    { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性技能点满' },
+    { key: 'crit',     label: '暴击增益',       kind: 'crit',          hint: '选择后自动填写暴击率和暴击伤害' },
+    { key: 'echo',     label: '英雄回声',       kind: 'echo',          hint: '' }
   ];
 
   var RESULTS = [
@@ -108,12 +106,12 @@
     '<span class="pldc-infocard-sub">计算结果仅供参考</span></div>';
 
   var CONVERT_FIELDS = [
-    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，随武器固定，无需改动；基础版隐藏，详细版可改。' },
-    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，随武器固定，无需改动；基础版隐藏，详细版可改。' },
-    { key: 'mastery', label: '熟练度 %',     kind: 'num', step: 1,    hint: '剑 60%，钝器 75%，随武器固定；基础版隐藏，详细版可改。原表 0.6 / 0.75。' },
-    { key: 'str',     label: '力量',         kind: 'num', step: 1,    hint: '角色力量总和。' },
-    { key: 'dex',     label: '敏捷',         kind: 'num', step: 1,    hint: '角色敏捷总和。' },
-    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1,    hint: '角色攻击力总和。' }
+    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01 },
+    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01 },
+    { key: 'mastery', label: '熟练度 %',     kind: 'num', step: 1 },
+    { key: 'str',     label: '力量',         kind: 'num', step: 1 },
+    { key: 'dex',     label: '敏捷',         kind: 'num', step: 1 },
+    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1 }
   ];
 
   var CONVERT_RESULTS = [
@@ -598,6 +596,7 @@
   }
 
   function hintHtml(f) {
+    if (!f || !f.hint) return '';
     return '<span class="pldc-hint" data-hint="' + esc(f.hint) + '" tabindex="0" role="note" aria-label="说明">?</span>';
   }
 

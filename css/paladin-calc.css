@@ -576,6 +576,43 @@
 
 .pldc .pldc-guide .pldc-detail { color: #8a7bd8; border-color: #b9aee8; }
 
+/* 说明里的引导句与分组小标题 */
+.pldc .pldc-guide .pldc-lead {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--pldc-muted);
+}
+
+.pldc .pldc-guide .pldc-group {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pldc-accent);
+}
+
+.pldc .pldc-guide .pldc-group::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--pldc-accent);
+  vertical-align: 3px;
+}
+
+/* 条目下的示例 / 注解，比正文更轻 */
+.pldc .pldc-guide ul.pldc-ex {
+  margin: 4px 0 2px;
+  padding-left: 1.1em;
+  font-size: 12.5px;
+  color: var(--pldc-muted);
+}
+
+.pldc .pldc-guide ul.pldc-ex li { margin: 2px 0; }
+
+.pldc .pldc-guide ul.pldc-ex li::marker { color: var(--pldc-line-strong); }
+
 /* ---------------- 攻力敏换算 ---------------- */
 
 /* 攻力敏换算：工具栏与固定表头 */
