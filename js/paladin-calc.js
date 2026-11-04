@@ -68,7 +68,9 @@
     { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,  hint: '怪物固有属性，物理防御力数值；打木桩填 0。' },
     { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10, hint: '环破点满技改 580%，原表写 5.8。' },
     { key: 'buff',     label: '增益百分比 %',   kind: 'num', step: 10, hint: '技改 130% / 圣 buff 140% / 不开 buff 100%。' },
-    { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性 buff 点满：克制 150% / 非克制 100% / 抗性 50%。' }
+    { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性 buff 点满：克制 150% / 非克制 100% / 抗性 50%。' },
+    { key: 'crit',     label: '暴击增益',       kind: 'crit',          hint: 'I12：暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。' },
+    { key: 'echo',     label: '英雄回声',       kind: 'echo',          hint: 'I15：选择计算后，攻击力按 INT(攻击力 × 1.04) 参与面板计算。' }
   ];
 
   var RESULTS = [
@@ -99,10 +101,10 @@
 
   // 默认四列（原表剑表默认值；钝器用「武器类型」下拉切换）
   var BASE = [
-    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '武器3', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' },
-    { name: '武器4', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制' }
+    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
+    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
+    { name: '武器3', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
+    { name: '武器4', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' }
   ];
 
   var CONVERT_BASE = [
@@ -113,8 +115,7 @@
   ];
 
   var DEFAULTS = {
-    crit: '不计算',
-    echo: '不计算',
+    count: 4,
     columns: JSON.parse(JSON.stringify(BASE)),
     convert: JSON.parse(JSON.stringify(CONVERT_BASE))
   };
@@ -133,10 +134,10 @@
     return 0;
   }
 
-  // 单方案计算：X14..X25
+  // 单方案计算：X14..X25（暴击 / 回声按列取，未显式传参时用该列自己的设置）
   function computeColumn(c, critLabel, echoLabel) {
-    var crit = optBy(CRIT_OPTIONS, critLabel);
-    var echo = optBy(ECHO_OPTIONS, echoLabel);
+    var crit = optBy(CRIT_OPTIONS, typeof critLabel === 'string' ? critLabel : c.crit);
+    var echo = optBy(ECHO_OPTIONS, typeof echoLabel === 'string' ? echoLabel : c.echo);
     var rel = optBy(RELATION_OPTIONS, c.relation);
 
     // X4 经回声加成后取整，再除以 100（原表 INT(X4*(1+I16))/100）
@@ -234,6 +235,11 @@
     return d;
   }
 
+  function pickCount(v, d) {
+    var n = Math.round(num(v, d));
+    return n >= 1 && n <= 4 ? n : d;
+  }
+
   function normalizeSlot(src, base, isConvert) {
     var o = clone(base);
     if (!src || typeof src !== 'object') return o;
@@ -248,8 +254,11 @@
     o.weapon = pickWeapon(src.weapon, base.weapon);
     o.relation = pickRelation(src.relation, base.relation);
     o.spd = pickSpd(src.spd, base.spd);
+    o.crit = pickText(src.crit, CRIT_OPTIONS, base.crit);
+    o.echo = pickText(src.echo, ECHO_OPTIONS, base.echo);
     for (var k in base) {
-      if (!base.hasOwnProperty(k) || k === 'name' || k === 'weapon' || k === 'relation' || k === 'spd') continue;
+      if (!base.hasOwnProperty(k)) continue;
+      if (k === 'name' || k === 'weapon' || k === 'relation' || k === 'spd' || k === 'crit' || k === 'echo') continue;
       o[k] = num(src[k], base[k]);
     }
     return o;
@@ -257,8 +266,7 @@
 
   function normalize(raw) {
     var out = {
-      crit: pickText(raw && raw.crit, CRIT_OPTIONS, DEFAULTS.crit),
-      echo: pickText(raw && raw.echo, ECHO_OPTIONS, DEFAULTS.echo),
+      count: pickCount(raw && raw.count, DEFAULTS.count),
       columns: [],
       convert: []
     };
@@ -369,8 +377,9 @@
   }
 
   function encodeState(s) {
-    var bytes = [1, critIndex(s.crit), echoIndex(s.echo)];
-    for (var i = 0; i < 4; i++) {
+    var count = pickCount(s.count, 4);
+    var bytes = [2, count];
+    for (var i = 0; i < count; i++) {
       var c = s.columns[i], b = BASE[i];
       var mask = 0, payload = [];
       if (c.weapon !== b.weapon) { mask |= 1; payload.push(weaponIndex(c.weapon)); }
@@ -381,7 +390,9 @@
       }
       if (c.relation !== b.relation) { mask |= (1 << 14); payload.push(relationIndex(c.relation)); }
       if (c.name !== b.name) { mask |= (1 << 15); var nb = utf8Bytes(c.name); pushVarint(payload, nb.length); for (var n = 0; n < nb.length; n++) payload.push(nb[n]); }
-      bytes.push(mask & 0xff, (mask >> 8) & 0xff);
+      if (c.crit !== b.crit) { mask |= (1 << 16); payload.push(critIndex(c.crit)); }
+      if (c.echo !== b.echo) { mask |= (1 << 17); payload.push(echoIndex(c.echo)); }
+      bytes.push(mask & 0xff, (mask >> 8) & 0xff, (mask >> 16) & 0xff);
       for (var p = 0; p < payload.length; p++) bytes.push(payload[p]);
     }
     // 攻力敏换算表：四列 ×(4 系数/熟练度 + 力量/敏捷/攻击力)
@@ -406,23 +417,30 @@
   function decodeState(str) {
     var bytes = fromB64(str);
     if (!bytes.length) throw new Error('空数据');
-    if (bytes[0] !== 1) {
+    if (bytes[0] !== 1 && bytes[0] !== 2) {
       // 兼容旧版 base64(JSON) 链接
       var txt = utf8Read(bytes, { i: 0 }, bytes.length);
       if (txt.charAt(0) === '{') return JSON.parse(txt);
       throw new Error('未知格式');
     }
 
+    // v1：全局暴击 / 回声，固定 4 列、2 字节掩码；v2：武器数量 + 每列暴击 / 回声、3 字节掩码
+    var ver = bytes[0];
     var st = { i: 1 };
-    var crit = CRIT_OPTIONS[readVarint(bytes, st)] || CRIT_OPTIONS[0];
-    var echo = ECHO_OPTIONS[readVarint(bytes, st)] || ECHO_OPTIONS[0];
-    var out = { crit: crit.text, echo: echo.text, columns: [], convert: [] };
+    var count = 4, crit0 = CRIT_OPTIONS[0], echo0 = ECHO_OPTIONS[0];
+    if (ver === 1) {
+      crit0 = CRIT_OPTIONS[readVarint(bytes, st)] || CRIT_OPTIONS[0];
+      echo0 = ECHO_OPTIONS[readVarint(bytes, st)] || ECHO_OPTIONS[0];
+    } else {
+      count = Math.min(4, Math.max(1, readVarint(bytes, st)));
+    }
+    var out = { count: count, columns: [], convert: [] };
 
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < count; i++) {
       var b = BASE[i];
-      var slot = { name: b.name };
-      var mask = bytes[st.i] | (bytes[st.i + 1] << 8);
-      st.i += 2;
+      var slot = { name: b.name, crit: crit0.text, echo: echo0.text };
+      var mask = bytes[st.i] | (bytes[st.i + 1] << 8) | ((ver === 2 ? bytes[st.i + 2] : 0) << 16);
+      st.i += ver === 2 ? 3 : 2;
       slot.weapon = (mask & 1) ? (WEAPONS[bytes[st.i++]] || WEAPONS[0]).text : b.weapon;
       for (var f = 0; f < ENC_FIELDS.length; f++) {
         var k = ENC_FIELDS[f];
@@ -436,6 +454,8 @@
         var len = readVarint(bytes, st);
         slot.name = utf8Read(bytes, st, len);
       }
+      if (ver === 2 && (mask & (1 << 16))) slot.crit = (CRIT_OPTIONS[bytes[st.i++]] || CRIT_OPTIONS[0]).text;
+      if (ver === 2 && (mask & (1 << 17))) slot.echo = (ECHO_OPTIONS[bytes[st.i++]] || ECHO_OPTIONS[0]).text;
       out.columns.push(slot);
     }
 
@@ -493,11 +513,33 @@
     return out;
   }
 
+  // 单元格里省掉「计算」前缀，避免下拉被截断
+  function critOptions(cur) {
+    var out = '';
+    for (var i = 0; i < CRIT_OPTIONS.length; i++) {
+      var t = CRIT_OPTIONS[i].text;
+      out += '<option value="' + t + '"' + (t === cur ? ' selected' : '') + '>' +
+        t.replace(/^计算/, '') + '</option>';
+    }
+    return out;
+  }
+
+  function echoOptions(cur) {
+    var out = '';
+    for (var i = 0; i < ECHO_OPTIONS.length; i++) {
+      var t = ECHO_OPTIONS[i].text;
+      out += '<option value="' + t + '"' + (t === cur ? ' selected' : '') + '>' + t + '</option>';
+    }
+    return out;
+  }
+
   function cellControl(mode, col, f, slot) {
     var base = ' data-mode="' + mode + '" data-col="' + col + '" data-key="' + f.key + '"';
     if (f.kind === 'speed') return '<select class="pldc-input pldc-select"' + base + '>' + speedOptions(slot.spd) + '</select>';
     if (f.kind === 'relation') return '<select class="pldc-input pldc-select"' + base + '>' + relationOptions(slot.relation) + '</select>';
     if (f.kind === 'weapon') return '<select class="pldc-input pldc-select"' + base + '>' + weaponOptions(slot.weapon) + '</select>';
+    if (f.kind === 'crit') return '<select class="pldc-input pldc-select"' + base + '>' + critOptions(slot.crit) + '</select>';
+    if (f.kind === 'echo') return '<select class="pldc-input pldc-select"' + base + '>' + echoOptions(slot.echo) + '</select>';
     var attrs = ' type="number" inputmode="decimal" step="' + (f.step || 1) + '"' +
       (typeof f.min === 'number' ? ' min="' + f.min + '"' : '') +
       (typeof f.max === 'number' ? ' max="' + f.max + '"' : '');
@@ -509,13 +551,14 @@
   }
 
   function calcPanel() {
+    var N = S.count;
     var html = '<section class="pldc-panel" data-panel="calc">' +
-      '<div class="pldc-cards"></div>' +
+      '<div class="pldc-cards pldc-n' + N + '"></div>' +
       '<p class="pldc-warn" data-warn></p>' +
-      '<div class="pldc-tablewrap"><table class="pldc-table">' +
+      '<div class="pldc-tablewrap"><table class="pldc-table pldc-n' + N + '">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
 
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < N; i++) {
       html += '<th scope="col" class="pldc-colhead">' +
         '<input class="pldc-name" data-mode="calc" data-col="' + i + '" data-key="name" ' +
         'type="text" maxlength="12" spellcheck="false" value="' + esc(S.columns[i].name) + '" title="点击修改方案名称">' +
@@ -527,25 +570,25 @@
       var fld = FIELDS[f];
       html += '<tr' + (fld.key === 'weapon' ? ' class="pldc-row-weapon"' : '') + '>' +
         '<th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
-      for (var c = 0; c < 4; c++) {
+      for (var c = 0; c < N; c++) {
         html += '<td class="pldc-cell">' + cellControl('calc', c, fld, S.columns[c]) + '</td>';
       }
       html += '</tr>';
     }
 
-    html += '<tr class="pldc-divider"><th colspan="5" scope="colgroup">计算结果</th></tr>';
+    html += '<tr class="pldc-divider"><th colspan="' + (N + 1) + '" scope="colgroup">计算结果</th></tr>';
     for (var r = 0; r < RESULTS.length; r++) {
       var res = RESULTS[r];
       html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '">' +
         '<th scope="row" class="pldc-rowhead">' + esc(res.label) + '</th>';
-      for (var c2 = 0; c2 < 4; c2++) {
+      for (var c2 = 0; c2 < N; c2++) {
         html += '<td class="pldc-cell pldc-out" data-out="calc" data-col="' + c2 + '" data-key="' + res.key + '"></td>';
       }
       html += '</tr>';
     }
     html += '</tbody></table></div>' +
       '<p class="pldc-note">每列可单独选武器类型；切换武器会按该武器重置主属性系数、熟练度与优劣比例，之后仍可手动改。' +
-      '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
+      '暴击增益与英雄回声也按列单独选。比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
       '鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
       '</section>';
     return html;
@@ -592,21 +635,14 @@
   }
 
   function toolbarHtml() {
-    var crit = '', echo = '';
-    for (var i = 0; i < CRIT_OPTIONS.length; i++) {
-      crit += '<option value="' + CRIT_OPTIONS[i].text + '"' + (CRIT_OPTIONS[i].text === S.crit ? ' selected' : '') + '>' +
-        CRIT_OPTIONS[i].text + '</option>';
-    }
-    for (var j = 0; j < ECHO_OPTIONS.length; j++) {
-      echo += '<option value="' + ECHO_OPTIONS[j].text + '"' + (ECHO_OPTIONS[j].text === S.echo ? ' selected' : '') + '>' +
-        ECHO_OPTIONS[j].text + '</option>';
+    var cnt = '';
+    for (var n = 1; n <= 4; n++) {
+      cnt += '<option value="' + n + '"' + (n === S.count ? ' selected' : '') + '>对比 ' + n + ' 把武器</option>';
     }
     return '<label class="pldc-field">' +
-      '<span>暴击增益</span><span class="pldc-hint" data-hint="I12：暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。" tabindex="0" role="note">?</span>' +
-      '<select class="pldc-input pldc-select" data-global="crit">' + crit + '</select></label>' +
-      '<label class="pldc-field">' +
-      '<span>英雄回声</span><span class="pldc-hint" data-hint="I15：英雄回声，选择计算后攻击力按 INT(攻击力 × 1.04) 参与面板计算。" tabindex="0" role="note">?</span>' +
-      '<select class="pldc-input pldc-select" data-global="echo">' + echo + '</select></label>' +
+      '<span>对比武器数量</span><span class="pldc-hint" data-hint="选择同时对比几把武器（1 ~ 4），下面的卡片与表格列数会跟着变。' +
+      '隐藏起来的列数据仍保留在本机，改回 4 把就会恢复。" tabindex="0" role="note">?</span>' +
+      '<select class="pldc-input pldc-select" data-global="count">' + cnt + '</select></label>' +
       '<span class="pldc-grow"></span>' +
       '<button type="button" class="pldc-btn" data-act="share">复制分享链接</button>' +
       '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset">恢复默认</button>';
@@ -630,7 +666,7 @@
 
   function resultsOf() {
     var out = [];
-    for (var i = 0; i < 4; i++) out.push(computeColumn(S.columns[i], S.crit, S.echo));
+    for (var i = 0; i < S.count; i++) out.push(computeColumn(S.columns[i]));
     return out;
   }
 
@@ -638,8 +674,10 @@
 
   function refreshCalc() {
     var res = resultsOf();
-    var best = -Infinity;
-    for (var i = 0; i < 4; i++) if (res[i].dpm > best) best = res[i].dpm;
+    var best = -Infinity, bestIdx = -1;
+    for (var i = 0; i < res.length; i++) {
+      if (res[i].dpm > best) { best = res[i].dpm; bestIdx = i; }
+    }
 
     var cells = root.querySelectorAll('[data-out="calc"]');
     for (var n = 0; n < cells.length; n++) {
@@ -650,13 +688,13 @@
       for (var q = 0; q < RESULTS.length; q++) if (RESULTS[q].key === key) spec = RESULTS[q];
       if (!spec) continue;
       setText(cell, fmtNum(res[col][key], spec.dec));
-      cell.classList.toggle('pldc-best', key === 'dpm' && res[col].dpm === best && best > 0);
+      cell.classList.toggle('pldc-best', key === 'dpm' && col === bestIdx && best > 0);
     }
 
     var cards = [];
-    for (var c = 0; c < 4; c++) {
+    for (var c = 0; c < res.length; c++) {
       var r = res[c];
-      var isBest = r.dpm === best && best > 0;
+      var isBest = c === bestIdx && best > 0;
       var delta = best > 0 && r.dpm > 0 && r.dpm < best ? '−' + fmtNum((1 - r.dpm / best) * 100, 1) + '%' : '';
       cards.push('<div class="pldc-card' + (isBest ? ' pldc-card-best' : '') + '">' +
         '<div class="pldc-card-top"><span class="pldc-card-name">' + esc(S.columns[c].name) + '</span>' +
@@ -672,7 +710,7 @@
     var warnBox = root.querySelector('[data-warn]');
     if (warnBox) {
       var msgs = [];
-      for (var w = 0; w < 4; w++) {
+      for (var w = 0; w < res.length; w++) {
         if (Math.abs(res[w].ratioSum - 100) > 0.001) {
           msgs.push(esc(S.columns[w].name) + ' 的优势 ' + fmtNum(S.columns[w].advRatio, 1) + '% + 劣势 ' +
             fmtNum(S.columns[w].disRatio, 1) + '% = ' + fmtNum(res[w].ratioSum, 1) + '%');
@@ -714,6 +752,8 @@
       return;
     }
     if (key === 'relation') { slot.relation = pickRelation(raw, slot.relation); return; }
+    if (key === 'crit') { slot.crit = pickText(raw, CRIT_OPTIONS, slot.crit); return; }
+    if (key === 'echo') { slot.echo = pickText(raw, ECHO_OPTIONS, slot.echo); return; }
     if (key === 'spd') { slot.spd = pickSpd(raw, slot.spd); return; }
     if (key === 'weapon') {
       var w = weaponBy(pickWeapon(raw, slot.weapon));
@@ -741,8 +781,15 @@
     var t = e.target;
     var g = t.getAttribute && t.getAttribute('data-global');
     if (g) {
-      if (g === 'crit') S.crit = pickText(t.value, CRIT_OPTIONS, S.crit);
-      if (g === 'echo') S.echo = pickText(t.value, ECHO_OPTIONS, S.echo);
+      if (g === 'count') {
+        var next = pickCount(t.value, S.count);
+        if (next === S.count) return;
+        S.count = next;
+        rebuild();
+        setTab('calc');
+        saveState();
+        return;
+      }
       refreshAll();
       saveState();
       return;

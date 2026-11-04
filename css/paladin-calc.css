@@ -430,8 +430,19 @@
   padding-top: 12px;
   border-top: 1px dashed var(--pldc-line);
   font-size: 12px;
+  line-height: 1.8;
   color: var(--pldc-muted);
-  text-align: center;
+  text-align: right;
+}
+
+/* 对比 1 ~ 4 把武器时卡片与表格的列宽 */
+@media (min-width: 768px) {
+  .pldc .pldc-cards.pldc-n1 { grid-template-columns: minmax(0, 1fr); }
+  .pldc .pldc-cards.pldc-n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pldc .pldc-cards.pldc-n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pldc .pldc-table.pldc-n1 { min-width: 0; }
+  .pldc .pldc-table.pldc-n2 { min-width: 470px; }
+  .pldc .pldc-table.pldc-n3 { min-width: 600px; }
 }
 
 /* ---------------- 使用说明 ---------------- */
@@ -503,4 +514,9 @@
   .pldc .pldc-btn { padding: 6px 10px; }
   .pldc .pldc-rowhead { min-width: 104px; font-size: 12px; }
   .pldc .pldc-table { min-width: 640px; }
+}
+
+/* 单把武器对比时，手机上也只占一列 */
+@media (max-width: 767px) {
+  .pldc .pldc-cards.pldc-n1 { grid-template-columns: minmax(0, 1fr); }
 }
