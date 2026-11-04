@@ -351,7 +351,7 @@
   border-bottom: 1px solid var(--pldc-line) !important;
 }
 
-.pldc .pldc-out { font-size: 13px; }
+.pldc .pldc-out { font-size: 13px; text-align: center; }
 
 .pldc .pldc-row-strong .pldc-out {
   font-weight: 700;
@@ -368,7 +368,7 @@
   width: 100%;
   box-sizing: border-box;
   height: 30px;
-  padding: 4px 22px 4px 8px;
+  padding: 4px 8px;
   border: 1px solid var(--pldc-line);
   border-radius: 6px;
   background: transparent;
@@ -376,7 +376,7 @@
   font: inherit;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
-  text-align: right;
+  text-align: center;
   transition: border-color .15s, box-shadow .15s;
 }
 
@@ -390,8 +390,10 @@
 .pldc .pldc-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 .pldc .pldc-select {
-  text-align: left;
+  text-align: center;
+  text-align-last: center;
   padding-right: 6px;
+  padding-left: 6px;
   cursor: pointer;
   background: transparent;
 }

@@ -105,7 +105,7 @@
   // 卡片行最左格，与表格「参数」列对齐
   var INFO_CARD = '<div class="pldc-infocard">' +
     '<span class="pldc-infocard-main">适用于WingsMS</span>' +
-    '<span class="pldc-infocard-sub">仅供参考</span></div>';
+    '<span class="pldc-infocard-sub">计算结果仅供参考</span></div>';
 
   var CONVERT_FIELDS = [
     { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
@@ -124,10 +124,10 @@
 
   // 默认四列（原表剑表默认值；钝器用「武器类型」下拉切换）
   var BASE = [
-    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
-    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1,    disCoef: 1,    subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
-    { name: '武器3', weapon: '双手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' },
-    { name: '武器4', weapon: '双手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1.15, disCoef: 1.15, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 130, relation: '克制', crit: '不计算', echo: '不计算' }
+    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器3', weapon: '单手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器4', weapon: '单手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' }
   ];
 
   var CONVERT_BASE = [
@@ -475,7 +475,7 @@
 
     for (var i = 0; i < count; i++) {
       var b = BASE[i];
-      var slot = { name: b.name, crit: crit0.text, echo: echo0.text };
+      var slot = { name: b.name, crit: ver === 1 ? crit0.text : b.crit, echo: ver === 1 ? echo0.text : b.echo };
       var mask = bytes[st.i] | (bytes[st.i + 1] << 8) | ((ver >= 2 ? bytes[st.i + 2] : 0) << 16);
       st.i += ver >= 2 ? 3 : 2;
       slot.weapon = (mask & 1) ? (WEAPONS[bytes[st.i++]] || WEAPONS[0]).text : b.weapon;
@@ -770,7 +770,7 @@
         (isBest ? '<span class="pldc-pill">最高</span>' : (delta ? '<span class="pldc-pill pldc-pill-dim">' + delta + '</span>' : '')) +
         '</div>' +
         '<div class="pldc-card-main">' + fmtNum(r.dpm, 2) + '<small>万 / 分钟</small></div>' +
-        '<div class="pldc-card-sub">单次 ' + fmtNum(r.hit, 2) + ' · 面板 ' + fmtNum(r.panel, 2) + '</div>' +
+        '<div class="pldc-card-sub">面板上限 ' + fmtNum(r.advHi, 2) + '</div>' +
         '</div>');
     }
     var cardBox = root.querySelector('.pldc-cards');
