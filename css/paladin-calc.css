@@ -578,21 +578,7 @@
 
 /* ---------------- 攻力敏换算 ---------------- */
 
-.pldc .pldc-convert-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
-  margin: 0 0 12px;
-}
-
-.pldc .pldc-convert-tip {
-  font-size: 12px;
-  color: var(--pldc-muted);
-  line-height: 1.5;
-}
-
-.pldc .pldc-convert-seg .pldc-segbtn { padding: 3px 10px; font-size: 12px; }
+/* 攻力敏换算：工具栏与固定表头 */
 
 /* 固定的表头名称（不可编辑） */
 .pldc .pldc-table thead .pldc-colhead-fixed {

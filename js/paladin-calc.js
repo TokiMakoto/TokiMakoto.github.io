@@ -122,19 +122,19 @@
     { key: 'atkPerDex', label: '攻击 / 敏捷收益', dec: 4, strong: true }
   ];
 
-  // 默认四列（原表剑表默认值；钝器用「武器类型」下拉切换）
+  // 默认四列（力量 1300 / 敏捷 120 / 攻击力 200；钝器等用「武器类型」下拉切换）
   var BASE = [
-    { name: '武器1', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
-    { name: '武器2', weapon: '单手剑', str: 1200, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
-    { name: '武器3', weapon: '单手剑', str: 1400, dex: 144, atk: 250, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
-    { name: '武器4', weapon: '单手剑', str: 1400, dex: 144, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' }
+    { name: '武器1', weapon: '单手剑', str: 1300, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器2', weapon: '单手剑', str: 1300, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器3', weapon: '单手剑', str: 1300, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' },
+    { name: '武器4', weapon: '单手剑', str: 1300, dex: 120, atk: 200, spd: 2, mastery: 60, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 100, disRatio: 0, def: 0, skill: 580, buff: 140, relation: '克制', crit: '不计算', echo: '计算' }
   ];
 
   var CONVERT_BASE = [
-    { name: '双手剑',   advCoef: 1.15, disCoef: 1.15, str: 1400, dex: 144, atk: 200, mastery: 60 },
-    { name: '单手剑',   advCoef: 1,    disCoef: 1,    str: 1100, dex: 120, atk: 200, mastery: 60 },
-    { name: '双手钝器', advCoef: 1.2,  disCoef: 0.85, str: 1400, dex: 144, atk: 200, mastery: 75 },
-    { name: '单手钝器', advCoef: 1.1,  disCoef: 0.8,  str: 1000, dex: 100, atk: 200, mastery: 75 }
+    { name: '双手剑',   advCoef: 1.15, disCoef: 1.15, str: 1300, dex: 120, atk: 200, mastery: 60 },
+    { name: '单手剑',   advCoef: 1,    disCoef: 1,    str: 1300, dex: 120, atk: 200, mastery: 60 },
+    { name: '双手钝器', advCoef: 1.2,  disCoef: 0.85, str: 1300, dex: 120, atk: 200, mastery: 75 },
+    { name: '单手钝器', advCoef: 1.1,  disCoef: 0.8,  str: 1300, dex: 120, atk: 200, mastery: 75 }
   ];
 
   var DEFAULTS = {
@@ -650,12 +650,10 @@
 
   function convertPanel() {
     var html = '<section class="pldc-panel" data-panel="convert" hidden>' +
-      '<p class="pldc-verdict">把四把武器的力量 / 敏捷 / 攻击力填进去，得到「1 攻击 ≈ X 点力量」的等效换算。' +
-      '本表算整体输出提升，不是面板最高值；未包含英雄回声。</p>' +
-      '<p class="pldc-convert-bar"><span class="pldc-convert-seg">' + viewSegHtml() + '</span>' +
-      '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset-convert">' +
-      '攻力敏换算恢复默认</button>' +
-      '<span class="pldc-convert-tip">武器名与武器系数为固定值；基础版隐藏，切到详细版可见可改。</span></p>' +
+      '<div class="pldc-toolbar pldc-toolbar-conv"><label class="pldc-field">' +
+      '<span>表格版本</span><span class="pldc-hint" data-hint="详细版可以修改武器系数等固定参数，推荐绝大部分玩家使用基础版，两版计算逻辑一致" tabindex="0" role="note">?</span>' +
+      viewSegHtml() + '</label><span class="pldc-grow"></span>' +
+      '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset-convert">恢复默认</button></div>' +
       '<div class="pldc-tablewrap"><table class="pldc-table pldc-conv' +
       (S.view === 'basic' ? ' pldc-basic' : '') + '">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
@@ -684,8 +682,8 @@
       html += '</tr>';
     }
     html += '</tbody></table></div>' +
-      '<p class="pldc-note">读法：攻击 / 力量收益 = 7.2 表示 1 点攻击力与 7.2 点力量的输出提升相同；' +
-      '攻击 / 敏捷收益 = 25.5 表示 1 点攻击与 25.5 点敏捷等价。未计算英雄回声，也未计算压制术与伤害上限。</p>' +
+      '<p class="pldc-note">例：攻击 / 力量收益 = 7.2，表示 1 点攻击力与 7.2 点力量的输出提升相同<br>' +
+      '注：未计算英雄回声与伤害上限，且本表算整体输出提升，并非面板最高值</p>' +
       '</section>';
     return html;
   }
