@@ -49,6 +49,13 @@
     { text: '抗性', pct: 0.5 }
   ];
 
+  // 属性增益（原表「增益百分比」一栏）：100 / 130 / 140
+  var BUFF_OPTIONS = [
+    { text: '圣属性 140%', pct: 140 },
+    { text: '冰火雷属性 130%', pct: 130 },
+    { text: '不开属性 100%', pct: 100 }
+  ];
+
   var HINT_WEAPON = '选好武器类型后，下面的优势 / 劣势主属性系数、熟练度、优劣比例会按该武器自动带出，仍可手动改。' +
     '单手剑 1 / 1、60%、100% / 0%；双手剑 1.15 / 1.15、60%、100% / 0%；' +
     '单手钝器 1.1 / 0.8、75%、60% / 40%；双手钝器 1.2 / 0.85、75%、60% / 40%。';
@@ -67,10 +74,10 @@
     { key: 'disRatio', label: '劣势比例 %',     kind: 'num', step: 1,  hint: '剑填 0%，钝器填 40%。优势比例 + 劣势比例应为 100%。' },
     { key: 'def',      label: '怪物物理防御',   kind: 'num', step: 1,  hint: '怪物固有属性，物理防御力数值；打木桩填 0。' },
     { key: 'skill',    label: '技能百分比 %',   kind: 'num', step: 10, hint: '环破点满技改 580%，原表写 5.8。' },
-    { key: 'buff',     label: '增益百分比 %',   kind: 'num', step: 10, hint: '技改 130% / 圣 buff 140% / 不开 buff 100%。' },
+    { key: 'buff',     label: '增益百分比',     kind: 'buff',          hint: '属性增益：圣属性 140%（圣 buff）、冰火雷属性 130%（技改）、不开属性 100%。' },
     { key: 'relation', label: '是否克制',       kind: 'relation',      hint: '默认属性 buff 点满：克制 150% / 非克制 100% / 抗性 50%。' },
-    { key: 'crit',     label: '暴击增益',       kind: 'crit',          hint: 'I12：暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。' },
-    { key: 'echo',     label: '英雄回声',       kind: 'echo',          hint: 'I15：选择计算后，攻击力按 INT(攻击力 × 1.04) 参与面板计算。' }
+    { key: 'crit',     label: '暴击增益',       kind: 'crit',          hint: '暴击增益的方式，暴击率与暴击伤害自动跟随（火眼晶晶 15% / 140%，栗子味粽子 5% / 110%，叠加 20% / 150%，珠光药丸 10% / 120%）。' },
+    { key: 'echo',     label: '英雄回声',       kind: 'echo',          hint: '选择计算后，攻击力按 INT(攻击力 × 1.04) 参与面板计算。' }
   ];
 
   var RESULTS = [
@@ -86,7 +93,7 @@
 
   // 基础版里隐藏的行（参数行与结果行共用同一份 key 表）
   var BASIC_HIDDEN = {
-    advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 1, disRatio: 1,
+    mastery: 1, skill: 1, advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 1, disRatio: 1,
     advLo: 1, disHi: 1, panel: 1, hits: 1, hit: 1
   };
 
@@ -94,6 +101,11 @@
     { key: 'basic',  label: '基础版' },
     { key: 'detail', label: '详细版' }
   ];
+
+  // 卡片行最左格，与表格「参数」列对齐
+  var INFO_CARD = '<div class="pldc-infocard">' +
+    '<span class="pldc-infocard-main">适用于WingsMS</span>' +
+    '<span class="pldc-infocard-sub">仅供参考</span></div>';
 
   var CONVERT_FIELDS = [
     { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
@@ -252,6 +264,12 @@
     return n >= 1 && n <= 4 ? n : d;
   }
 
+  function pickBuff(v, d) {
+    var n = Math.round(num(v, d));
+    for (var i = 0; i < BUFF_OPTIONS.length; i++) if (BUFF_OPTIONS[i].pct === n) return n;
+    return d;
+  }
+
   function pickView(v, d) {
     return v === 'detail' || v === 'basic' ? v : d;
   }
@@ -272,9 +290,10 @@
     o.spd = pickSpd(src.spd, base.spd);
     o.crit = pickText(src.crit, CRIT_OPTIONS, base.crit);
     o.echo = pickText(src.echo, ECHO_OPTIONS, base.echo);
+    o.buff = pickBuff(src.buff, base.buff);
     for (var k in base) {
       if (!base.hasOwnProperty(k)) continue;
-      if (k === 'name' || k === 'weapon' || k === 'relation' || k === 'spd' || k === 'crit' || k === 'echo') continue;
+      if (k === 'name' || k === 'weapon' || k === 'relation' || k === 'spd' || k === 'crit' || k === 'echo' || k === 'buff') continue;
       o[k] = num(src[k], base[k]);
     }
     return o;
@@ -551,6 +570,15 @@
     return out;
   }
 
+  function buffOptions(cur) {
+    var out = '';
+    for (var i = 0; i < BUFF_OPTIONS.length; i++) {
+      var b = BUFF_OPTIONS[i];
+      out += '<option value="' + b.pct + '"' + (b.pct === cur ? ' selected' : '') + '>' + b.text + '</option>';
+    }
+    return out;
+  }
+
   function cellControl(mode, col, f, slot) {
     var base = ' data-mode="' + mode + '" data-col="' + col + '" data-key="' + f.key + '"';
     if (f.kind === 'speed') return '<select class="pldc-input pldc-select"' + base + '>' + speedOptions(slot.spd) + '</select>';
@@ -558,6 +586,7 @@
     if (f.kind === 'weapon') return '<select class="pldc-input pldc-select"' + base + '>' + weaponOptions(slot.weapon) + '</select>';
     if (f.kind === 'crit') return '<select class="pldc-input pldc-select"' + base + '>' + critOptions(slot.crit) + '</select>';
     if (f.kind === 'echo') return '<select class="pldc-input pldc-select"' + base + '>' + echoOptions(slot.echo) + '</select>';
+    if (f.kind === 'buff') return '<select class="pldc-input pldc-select"' + base + '>' + buffOptions(slot.buff) + '</select>';
     var attrs = ' type="number" inputmode="decimal" step="' + (f.step || 1) + '"' +
       (typeof f.min === 'number' ? ' min="' + f.min + '"' : '') +
       (typeof f.max === 'number' ? ' max="' + f.max + '"' : '');
@@ -571,9 +600,10 @@
   function calcPanel() {
     var N = S.count;
     var html = '<section class="pldc-panel" data-panel="calc">' +
-      '<div class="pldc-cards pldc-n' + N + '"></div>' +
       '<p class="pldc-warn" data-warn></p>' +
-      '<div class="pldc-tablewrap"><table class="pldc-table pldc-n' + N +
+      '<div class="pldc-tablewrap"><div class="pldc-inner pldc-n' + N + '">' +
+      '<div class="pldc-cards pldc-n' + N + '"></div>' +
+      '<table class="pldc-table pldc-n' + N +
       (S.view === 'basic' ? ' pldc-basic' : '') + '">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
 
@@ -608,11 +638,8 @@
       }
       html += '</tr>';
     }
-    html += '</tbody></table></div>' +
-      '<p class="pldc-note">每列可单独选武器类型；切换武器会按该武器重置主属性系数、熟练度与优劣比例，之后仍可手动改。' +
-      '暴击增益与英雄回声也按列单独选。工具栏的「表格版本」可在基础版与详细版之间切换，数值完全共用。' +
-      '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
-      '鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
+    html += '</tbody></table></div></div>' +
+      '<p class="pldc-note">第一次使用前请阅读<a href="javascript:void(0)" class="pldc-notelink" data-tab="guide">使用说明</a></p>' +
       '</section>';
     return html;
   }
@@ -747,7 +774,7 @@
         '</div>');
     }
     var cardBox = root.querySelector('.pldc-cards');
-    if (cardBox) cardBox.innerHTML = cards.join('');
+    if (cardBox) cardBox.innerHTML = INFO_CARD + cards.join('');
 
     var warnBox = root.querySelector('[data-warn]');
     if (warnBox) {
@@ -781,6 +808,23 @@
   function refreshAll() {
     refreshCalc();
     refreshConvert();
+    alignCardsSoon();
+  }
+
+  // 让卡片行与表格列对齐：把「参数」列的实际宽度量出来，交给卡片栅格复用
+  var alignTimer = null;
+  function alignCards() {
+    var table = root && root.querySelector('.pldc-panel[data-panel="calc"] table.pldc-table');
+    var box = root && root.querySelector('.pldc-cards');
+    if (!table || !box) return;
+    var head = table.querySelector('.pldc-rowhead');
+    if (!head) return;
+    var w = head.getBoundingClientRect().width;
+    if (w > 0) box.style.setProperty('--pldc-head-w', (Math.round(w * 10) / 10) + 'px');
+  }
+  function alignCardsSoon() {
+    if (alignTimer) clearTimeout(alignTimer);
+    alignTimer = setTimeout(alignCards, 0);
   }
 
   /* ------------------------- 交互 ------------------------- */
@@ -797,6 +841,7 @@
     if (key === 'relation') { slot.relation = pickRelation(raw, slot.relation); return; }
     if (key === 'crit') { slot.crit = pickText(raw, CRIT_OPTIONS, slot.crit); return; }
     if (key === 'echo') { slot.echo = pickText(raw, ECHO_OPTIONS, slot.echo); return; }
+    if (key === 'buff') { slot.buff = pickBuff(raw, slot.buff); return; }
     if (key === 'spd') { slot.spd = pickSpd(raw, slot.spd); return; }
     if (key === 'weapon') {
       var w = weaponBy(pickWeapon(raw, slot.weapon));
@@ -1070,7 +1115,7 @@
       if (!closestHint(e.target) && e.pointerType !== 'touch') hideTip();
     }, true);
     window.addEventListener('scroll', hideTip, true);
-    window.addEventListener('resize', hideTip);
+    window.addEventListener('resize', function () { hideTip(); alignCardsSoon(); });
 
     refreshAll();
     setTab('calc');
@@ -1093,6 +1138,7 @@
     CRIT_OPTIONS: CRIT_OPTIONS,
     ECHO_OPTIONS: ECHO_OPTIONS,
     RELATION_OPTIONS: RELATION_OPTIONS,
+    BUFF_OPTIONS: BUFF_OPTIONS,
     VIEWS: VIEWS,
     BASIC_HIDDEN: BASIC_HIDDEN
   };

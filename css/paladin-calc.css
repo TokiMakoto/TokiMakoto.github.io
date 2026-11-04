@@ -158,15 +158,57 @@
 
 .pldc .pldc-cards {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0 0 10px;
+  /* 第一列宽度由 JS 量出「参数」列实际宽度后写入，卡片因此与表格列对齐 */
+  grid-template-columns: var(--pldc-head-w, 128px) repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.pldc .pldc-cards.pldc-n1 { grid-template-columns: var(--pldc-head-w, 128px) minmax(0, 1fr); }
+.pldc .pldc-cards.pldc-n2 { grid-template-columns: var(--pldc-head-w, 128px) repeat(2, minmax(0, 1fr)); }
+.pldc .pldc-cards.pldc-n3 { grid-template-columns: var(--pldc-head-w, 128px) repeat(3, minmax(0, 1fr)); }
+.pldc .pldc-cards.pldc-n4 { grid-template-columns: var(--pldc-head-w, 128px) repeat(4, minmax(0, 1fr)); }
+
+/* 卡片行最左格：与「参数」列对齐的信息卡 */
+.pldc .pldc-infocard {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  margin: 8px 5px 8px 0;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--pldc-line);
+  border-radius: 10px;
+  background: var(--card-bg, #fff);
+}
+
+.pldc .pldc-infocard-main {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  color: var(--font-color, #4c4948);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pldc .pldc-infocard-sub {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--pldc-muted);
+  white-space: nowrap;
 }
 
 .pldc .pldc-card {
   border: 1px solid var(--pldc-line);
   border-radius: 10px;
   padding: 10px 12px 11px;
+  margin: 8px 5px;
   background: var(--pldc-head);
   min-width: 0;
 }
@@ -240,9 +282,23 @@
   -webkit-overflow-scrolling: touch;
 }
 
+/* 卡片行与表格同一个横向滚动区域，宽度也由这里统一 */
+.pldc .pldc-tablewrap > .pldc-inner { min-width: 700px; }
+.pldc .pldc-tablewrap > .pldc-inner.pldc-n1 { min-width: 0; }
+.pldc .pldc-tablewrap > .pldc-inner.pldc-n2 { min-width: 470px; }
+.pldc .pldc-tablewrap > .pldc-inner.pldc-n3 { min-width: 600px; }
+
+.pldc .pldc-notelink {
+  color: var(--pldc-accent);
+  border-bottom: 1px dashed currentColor;
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .pldc .pldc-table {
   width: 100%;
   min-width: 700px;
+  table-layout: fixed;      /* 列宽可预期，卡片行才能与表格列严格对齐 */
   border-collapse: collapse;
   border-spacing: 0;
   margin: 0 !important;
@@ -250,6 +306,9 @@
   font-variant-numeric: tabular-nums;
   background: transparent;
 }
+
+/* 第一列固定宽度，其余列等分 */
+.pldc .pldc-table thead .pldc-rowhead { width: 150px; }
 
 .pldc .pldc-table th,
 .pldc .pldc-table td {
@@ -279,7 +338,7 @@
 
 .pldc .pldc-table thead .pldc-rowhead { z-index: 4; }
 
-.pldc .pldc-colhead { padding: 7px 6px !important; width: 25%; }
+.pldc .pldc-colhead { padding: 7px 6px !important; }
 
 .pldc .pldc-cell { position: relative; }
 
@@ -468,12 +527,12 @@
 
 /* 对比 1 ~ 4 把武器时卡片与表格的列宽 */
 @media (min-width: 768px) {
-  .pldc .pldc-cards.pldc-n1 { grid-template-columns: minmax(0, 1fr); }
-  .pldc .pldc-cards.pldc-n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pldc .pldc-cards.pldc-n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .pldc .pldc-table.pldc-n1 { min-width: 0; }
   .pldc .pldc-table.pldc-n2 { min-width: 470px; }
   .pldc .pldc-table.pldc-n3 { min-width: 600px; }
+  .pldc .pldc-tablewrap > .pldc-inner.pldc-n1 { min-width: 0; }
+  .pldc .pldc-tablewrap > .pldc-inner.pldc-n2 { min-width: 470px; }
+  .pldc .pldc-tablewrap > .pldc-inner.pldc-n3 { min-width: 600px; }
 }
 
 /* ---------------- 使用说明 ---------------- */
@@ -513,6 +572,8 @@
 
 .pldc .pldc-guide .pldc-must { color: var(--pldc-accent); border-color: var(--pldc-accent); }
 
+.pldc .pldc-guide .pldc-detail { color: #8a7bd8; border-color: #b9aee8; }
+
 /* ---------------- 提示条 ---------------- */
 
 .pldc-toast {
@@ -538,16 +599,17 @@
 
 @media (max-width: 767px) {
   .pldc { font-size: 13px; }
-  .pldc .pldc-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pldc .pldc-card-main { font-size: 19px; }
+  .pldc .pldc-card { padding: 8px 9px 9px; margin: 8px 4px; }
+  .pldc .pldc-infocard { padding: 7px 8px 8px; margin: 8px 4px 8px 0; }
+  .pldc .pldc-infocard-main { font-size: 11.5px; white-space: normal; overflow: visible; text-overflow: clip; }
+  .pldc .pldc-infocard-sub { font-size: 10.5px; }
   .pldc .pldc-tab { padding: 8px 12px; font-size: 13px; }
   .pldc .pldc-toolbar { gap: 8px 10px; }
   .pldc .pldc-btn { padding: 6px 10px; }
   .pldc .pldc-rowhead { min-width: 104px; font-size: 12px; }
+  .pldc .pldc-table thead .pldc-rowhead { width: 112px; }
   .pldc .pldc-table { min-width: 640px; }
-}
-
-/* 单把武器对比时，手机上也只占一列 */
-@media (max-width: 767px) {
-  .pldc .pldc-cards.pldc-n1 { grid-template-columns: minmax(0, 1fr); }
+  .pldc .pldc-tablewrap > .pldc-inner { min-width: 640px; }
+  .pldc .pldc-tablewrap > .pldc-inner.pldc-n1 { min-width: 100%; }
 }
