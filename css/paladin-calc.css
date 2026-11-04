@@ -88,6 +88,37 @@
   border-color: var(--pldc-line-strong);
 }
 
+/* 基础版 / 详细版 分段控件 */
+.pldc .pldc-seg {
+  display: inline-flex;
+  border: 1px solid var(--pldc-line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pldc .pldc-segbtn {
+  border: 0;
+  background: transparent;
+  color: var(--pldc-muted);
+  padding: 6px 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.pldc .pldc-segbtn + .pldc-segbtn { border-left: 1px solid var(--pldc-line-strong); }
+
+.pldc .pldc-segbtn:hover { color: var(--pldc-accent); }
+
+.pldc .pldc-segbtn.is-on {
+  background: var(--pldc-accent);
+  color: #fff;
+}
+
+/* 基础版隐藏的行 */
+.pldc .pldc-table.pldc-basic tr[data-basic='1'] { display: none; }
+
 .pldc .pldc-btn-ghost:hover { color: var(--pldc-accent); border-color: var(--pldc-accent); filter: none; }
 
 /* ---------------- 标签页 ---------------- */

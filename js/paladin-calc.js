@@ -84,6 +84,17 @@
     { key: 'dpm',   label: '每分钟造成伤害（万）', dec: 2, strong: true }
   ];
 
+  // 基础版里隐藏的行（参数行与结果行共用同一份 key 表）
+  var BASIC_HIDDEN = {
+    advCoef: 1, disCoef: 1, subCoef: 1, advRatio: 1, disRatio: 1,
+    advLo: 1, disHi: 1, panel: 1, hits: 1, hit: 1
+  };
+
+  var VIEWS = [
+    { key: 'basic',  label: '基础版' },
+    { key: 'detail', label: '详细版' }
+  ];
+
   var CONVERT_FIELDS = [
     { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
     { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
@@ -116,6 +127,7 @@
 
   var DEFAULTS = {
     count: 4,
+    view: 'basic',
     columns: JSON.parse(JSON.stringify(BASE)),
     convert: JSON.parse(JSON.stringify(CONVERT_BASE))
   };
@@ -240,6 +252,10 @@
     return n >= 1 && n <= 4 ? n : d;
   }
 
+  function pickView(v, d) {
+    return v === 'detail' || v === 'basic' ? v : d;
+  }
+
   function normalizeSlot(src, base, isConvert) {
     var o = clone(base);
     if (!src || typeof src !== 'object') return o;
@@ -267,6 +283,7 @@
   function normalize(raw) {
     var out = {
       count: pickCount(raw && raw.count, DEFAULTS.count),
+      view: pickView(raw && raw.view, DEFAULTS.view),
       columns: [],
       convert: []
     };
@@ -378,7 +395,7 @@
 
   function encodeState(s) {
     var count = pickCount(s.count, 4);
-    var bytes = [2, count];
+    var bytes = [3, count, s.view === 'detail' ? 1 : 0];
     for (var i = 0; i < count; i++) {
       var c = s.columns[i], b = BASE[i];
       var mask = 0, payload = [];
@@ -417,14 +434,14 @@
   function decodeState(str) {
     var bytes = fromB64(str);
     if (!bytes.length) throw new Error('空数据');
-    if (bytes[0] !== 1 && bytes[0] !== 2) {
+    if (bytes[0] !== 1 && bytes[0] !== 2 && bytes[0] !== 3) {
       // 兼容旧版 base64(JSON) 链接
       var txt = utf8Read(bytes, { i: 0 }, bytes.length);
       if (txt.charAt(0) === '{') return JSON.parse(txt);
       throw new Error('未知格式');
     }
 
-    // v1：全局暴击 / 回声，固定 4 列、2 字节掩码；v2：武器数量 + 每列暴击 / 回声、3 字节掩码
+    // v1：全局暴击 / 回声，固定 4 列、2 字节掩码；v2：武器数量 + 每列暴击 / 回声、3 字节掩码；v3 额外带基础版 / 详细版
     var ver = bytes[0];
     var st = { i: 1 };
     var count = 4, crit0 = CRIT_OPTIONS[0], echo0 = ECHO_OPTIONS[0];
@@ -434,13 +451,14 @@
     } else {
       count = Math.min(4, Math.max(1, readVarint(bytes, st)));
     }
-    var out = { count: count, columns: [], convert: [] };
+    var view = ver === 3 ? (readVarint(bytes, st) ? 'detail' : 'basic') : 'basic';
+    var out = { count: count, view: view, columns: [], convert: [] };
 
     for (var i = 0; i < count; i++) {
       var b = BASE[i];
       var slot = { name: b.name, crit: crit0.text, echo: echo0.text };
-      var mask = bytes[st.i] | (bytes[st.i + 1] << 8) | ((ver === 2 ? bytes[st.i + 2] : 0) << 16);
-      st.i += ver === 2 ? 3 : 2;
+      var mask = bytes[st.i] | (bytes[st.i + 1] << 8) | ((ver >= 2 ? bytes[st.i + 2] : 0) << 16);
+      st.i += ver >= 2 ? 3 : 2;
       slot.weapon = (mask & 1) ? (WEAPONS[bytes[st.i++]] || WEAPONS[0]).text : b.weapon;
       for (var f = 0; f < ENC_FIELDS.length; f++) {
         var k = ENC_FIELDS[f];
@@ -454,8 +472,8 @@
         var len = readVarint(bytes, st);
         slot.name = utf8Read(bytes, st, len);
       }
-      if (ver === 2 && (mask & (1 << 16))) slot.crit = (CRIT_OPTIONS[bytes[st.i++]] || CRIT_OPTIONS[0]).text;
-      if (ver === 2 && (mask & (1 << 17))) slot.echo = (ECHO_OPTIONS[bytes[st.i++]] || ECHO_OPTIONS[0]).text;
+      if (ver >= 2 && (mask & (1 << 16))) slot.crit = (CRIT_OPTIONS[bytes[st.i++]] || CRIT_OPTIONS[0]).text;
+      if (ver >= 2 && (mask & (1 << 17))) slot.echo = (ECHO_OPTIONS[bytes[st.i++]] || ECHO_OPTIONS[0]).text;
       out.columns.push(slot);
     }
 
@@ -555,7 +573,8 @@
     var html = '<section class="pldc-panel" data-panel="calc">' +
       '<div class="pldc-cards pldc-n' + N + '"></div>' +
       '<p class="pldc-warn" data-warn></p>' +
-      '<div class="pldc-tablewrap"><table class="pldc-table pldc-n' + N + '">' +
+      '<div class="pldc-tablewrap"><table class="pldc-table pldc-n' + N +
+      (S.view === 'basic' ? ' pldc-basic' : '') + '">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
 
     for (var i = 0; i < N; i++) {
@@ -568,7 +587,9 @@
 
     for (var f = 0; f < FIELDS.length; f++) {
       var fld = FIELDS[f];
-      html += '<tr' + (fld.key === 'weapon' ? ' class="pldc-row-weapon"' : '') + '>' +
+      html += '<tr' +
+        (fld.key === 'weapon' ? ' class="pldc-row-weapon"' : '') +
+        (BASIC_HIDDEN[fld.key] ? ' data-basic="1"' : '') + '>' +
         '<th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < N; c++) {
         html += '<td class="pldc-cell">' + cellControl('calc', c, fld, S.columns[c]) + '</td>';
@@ -579,7 +600,8 @@
     html += '<tr class="pldc-divider"><th colspan="' + (N + 1) + '" scope="colgroup">计算结果</th></tr>';
     for (var r = 0; r < RESULTS.length; r++) {
       var res = RESULTS[r];
-      html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '">' +
+      html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '"' +
+        (BASIC_HIDDEN[res.key] ? ' data-basic="1"' : '') + '>' +
         '<th scope="row" class="pldc-rowhead">' + esc(res.label) + '</th>';
       for (var c2 = 0; c2 < N; c2++) {
         html += '<td class="pldc-cell pldc-out" data-out="calc" data-col="' + c2 + '" data-key="' + res.key + '"></td>';
@@ -588,7 +610,8 @@
     }
     html += '</tbody></table></div>' +
       '<p class="pldc-note">每列可单独选武器类型；切换武器会按该武器重置主属性系数、熟练度与优劣比例，之后仍可手动改。' +
-      '暴击增益与英雄回声也按列单独选。比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
+      '暴击增益与英雄回声也按列单独选。工具栏的「表格版本」可在基础版与详细版之间切换，数值完全共用。' +
+      '比例按 <b>%</b> 填写（原表 0.6 = 本页 60%），技能 / 增益百分比同理（原表 5.8 = 本页 580）。' +
       '鼠标移到参数名旁的 <b>?</b> 上看原表说明。</p>' +
       '</section>';
     return html;
@@ -639,13 +662,32 @@
     for (var n = 1; n <= 4; n++) {
       cnt += '<option value="' + n + '"' + (n === S.count ? ' selected' : '') + '>对比 ' + n + ' 把武器</option>';
     }
+    var seg = '';
+    for (var v = 0; v < VIEWS.length; v++) {
+      seg += '<button type="button" class="pldc-segbtn' + (S.view === VIEWS[v].key ? ' is-on' : '') +
+        '" data-view="' + VIEWS[v].key + '">' + VIEWS[v].label + '</button>';
+    }
     return '<label class="pldc-field">' +
+      '<span>表格版本</span><span class="pldc-hint" data-hint="基础版只留常用参数与最终结果；详细版把主属性系数、优劣比例、面板上下限、期望值与单次伤害一并摊开。' +
+      '切换不影响已填数值，分享链接会记住当前版本。" tabindex="0" role="note">?</span>' +
+      '<span class="pldc-seg">' + seg + '</span></label>' +
+      '<label class="pldc-field">' +
       '<span>对比武器数量</span><span class="pldc-hint" data-hint="选择同时对比几把武器（1 ~ 4），下面的卡片与表格列数会跟着变。' +
       '隐藏起来的列数据仍保留在本机，改回 4 把就会恢复。" tabindex="0" role="note">?</span>' +
       '<select class="pldc-input pldc-select" data-global="count">' + cnt + '</select></label>' +
       '<span class="pldc-grow"></span>' +
       '<button type="button" class="pldc-btn" data-act="share">复制分享链接</button>' +
       '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset">恢复默认</button>';
+  }
+
+  // 只切 class，不重建 DOM，输入焦点与滚动位置都不会丢
+  function applyView() {
+    var table = root.querySelector('table.pldc-table');
+    if (table) table.classList.toggle('pldc-basic', S.view === 'basic');
+    var btns = root.querySelectorAll('[data-view]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.toggle('is-on', btns[i].getAttribute('data-view') === S.view);
+    }
   }
 
   var TABS = [
@@ -716,7 +758,8 @@
             fmtNum(S.columns[w].disRatio, 1) + '% = ' + fmtNum(res[w].ratioSum, 1) + '%');
         }
       }
-      warnBox.innerHTML = msgs.length ? '注意：' + msgs.join('；') + '，合计不等于 100%，结果可能与预期不符。' : '';
+      var tail = S.view === 'basic' ? '（基础版隐藏了优劣比例，切到详细版可修改）' : '';
+      warnBox.innerHTML = msgs.length ? '注意：' + msgs.join('；') + '，合计不等于 100%，结果可能与预期不符。' + tail : '';
       warnBox.hidden = !msgs.length;
     }
   }
@@ -909,8 +952,19 @@
   }
 
   function onClick(e) {
-    var btn = e.target.closest ? e.target.closest('[data-act],[data-tab]') : null;
+    var btn = e.target.closest ? e.target.closest('[data-act],[data-tab],[data-view]') : null;
     if (!btn) return;
+
+    var view = btn.getAttribute('data-view');
+    if (view) {
+      var next = pickView(view, S.view);
+      if (next === S.view) return;
+      S.view = next;
+      applyView();
+      refreshCalc();
+      saveState();
+      return;
+    }
 
     var tab = btn.getAttribute('data-tab');
     if (tab) { setTab(tab); return; }
@@ -1038,7 +1092,9 @@
     SPEED_TABLE: SPEED_TABLE,
     CRIT_OPTIONS: CRIT_OPTIONS,
     ECHO_OPTIONS: ECHO_OPTIONS,
-    RELATION_OPTIONS: RELATION_OPTIONS
+    RELATION_OPTIONS: RELATION_OPTIONS,
+    VIEWS: VIEWS,
+    BASIC_HIDDEN: BASIC_HIDDEN
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = API;
