@@ -108,12 +108,12 @@
     '<span class="pldc-infocard-sub">计算结果仅供参考</span></div>';
 
   var CONVERT_FIELDS = [
-    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
-    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，无需改动。' },
+    { key: 'advCoef', label: '优势武器系数', kind: 'num', step: 0.01, hint: '武器系数，随武器固定，无需改动；基础版隐藏，详细版可改。' },
+    { key: 'disCoef', label: '劣势武器系数', kind: 'num', step: 0.01, hint: '武器系数，随武器固定，无需改动；基础版隐藏，详细版可改。' },
+    { key: 'mastery', label: '熟练度 %',     kind: 'num', step: 1,    hint: '剑 60%，钝器 75%，随武器固定；基础版隐藏，详细版可改。原表 0.6 / 0.75。' },
     { key: 'str',     label: '力量',         kind: 'num', step: 1,    hint: '角色力量总和。' },
     { key: 'dex',     label: '敏捷',         kind: 'num', step: 1,    hint: '角色敏捷总和。' },
-    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1,    hint: '角色攻击力总和。' },
-    { key: 'mastery', label: '熟练度 %',     kind: 'num', step: 1,    hint: '剑 60%，钝器 75%。原表 0.6 / 0.75。' }
+    { key: 'atk',     label: '总攻击力',     kind: 'num', step: 1,    hint: '角色攻击力总和。' }
   ];
 
   var CONVERT_RESULTS = [
@@ -209,8 +209,12 @@
   function groupDigits(s) {
     var neg = s.charAt(0) === '-';
     if (neg) s = s.slice(1);
-    s = s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    return (neg ? '-' : '') + s;
+    // 只对整数部分加千分位，避免把小数部分也切开（7.2033 不能变成 7.2,033）
+    var dot = s.indexOf('.');
+    var intPart = dot >= 0 ? s.slice(0, dot) : s;
+    var frac = dot >= 0 ? s.slice(dot) : '';
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return (neg ? '-' : '') + intPart + frac;
   }
 
   function fmtNum(v, dec) {
@@ -277,7 +281,7 @@
   function normalizeSlot(src, base, isConvert) {
     var o = clone(base);
     if (!src || typeof src !== 'object') return o;
-    if (typeof src.name === 'string' && src.name.trim()) o.name = src.name.trim().slice(0, 12);
+    if (!isConvert && typeof src.name === 'string' && src.name.trim()) o.name = src.name.trim().slice(0, 12);
     if (isConvert) {
       for (var kc in base) {
         if (!base.hasOwnProperty(kc) || kc === 'name') continue;
@@ -441,7 +445,7 @@
         var a = scaleVal(ck, cc[ck]), d = scaleVal(ck, cb[ck]);
         if (a !== d) { cmask |= (1 << q); pushZig(cpay, a); }
       }
-      if (cc.name !== cb.name) { cmask |= (1 << 6); var cb2 = utf8Bytes(cc.name); pushVarint(cpay, cb2.length); for (var m = 0; m < cb2.length; m++) cpay.push(cb2[m]); }
+      // 换算表武器名固定为「双手剑 / 单手剑 / 双手钝器 / 单手钝器」，不再编码
       bytes.push(cmask & 0xff);
       for (var w = 0; w < cpay.length; w++) bytes.push(cpay[w]);
     }
@@ -648,27 +652,29 @@
     var html = '<section class="pldc-panel" data-panel="convert" hidden>' +
       '<p class="pldc-verdict">把四把武器的力量 / 敏捷 / 攻击力填进去，得到「1 攻击 ≈ X 点力量」的等效换算。' +
       '本表算整体输出提升，不是面板最高值；未包含英雄回声。</p>' +
-      '<div class="pldc-tablewrap"><table class="pldc-table">' +
+      '<p class="pldc-convert-bar"><span class="pldc-convert-seg">' + viewSegHtml() + '</span>' +
+      '<button type="button" class="pldc-btn pldc-btn-ghost" data-act="reset-convert">' +
+      '攻力敏换算恢复默认</button>' +
+      '<span class="pldc-convert-tip">武器名与武器系数为固定值；基础版隐藏，切到详细版可见可改。</span></p>' +
+      '<div class="pldc-tablewrap"><table class="pldc-table pldc-conv' +
+      (S.view === 'basic' ? ' pldc-basic' : '') + '">' +
       '<thead><tr><th class="pldc-rowhead" scope="col">参数</th>';
     for (var i = 0; i < 4; i++) {
-      html += '<th scope="col" class="pldc-colhead">' +
-        '<input class="pldc-name" data-mode="convert" data-col="' + i + '" data-key="name" ' +
-        'type="text" maxlength="12" spellcheck="false" value="' + esc(S.convert[i].name) + '" title="点击修改武器名称">' +
-        '</th>';
+      html += '<th scope="col" class="pldc-colhead pldc-colhead-fixed">' + esc(CONVERT_BASE[i].name) + '</th>';
     }
     html += '</tr></thead><tbody>';
 
     for (var f = 0; f < CONVERT_FIELDS.length; f++) {
       var fld = CONVERT_FIELDS[f];
-      html += '<tr><th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
+      html += '<tr' + (BASIC_HIDDEN[fld.key] ? ' data-basic="1"' : '') + '>' +
+        '<th scope="row" class="pldc-rowhead">' + esc(fld.label) + hintHtml(fld) + '</th>';
       for (var c = 0; c < 4; c++) {
         html += '<td class="pldc-cell">' + cellControl('convert', c, fld, S.convert[c]) + '</td>';
       }
       html += '</tr>';
     }
 
-    html += '<tr class="pldc-divider"><th colspan="5" scope="colgroup">换算结果</th></tr>';
-    for (var r = 0; r < CONVERT_RESULTS.length; r++) {
+    html += '<tr class="pldc-divider"><th colspan="5" scope="colgroup">换算结果</th></tr>';    for (var r = 0; r < CONVERT_RESULTS.length; r++) {
       var res = CONVERT_RESULTS[r];
       html += '<tr class="' + (res.strong ? 'pldc-row-strong' : '') + '">' +
         '<th scope="row" class="pldc-rowhead">' + esc(res.label) + '</th>';
@@ -684,20 +690,23 @@
     return html;
   }
 
-  function toolbarHtml() {
-    var cnt = '';
-    for (var n = 1; n <= 4; n++) {
-      cnt += '<option value="' + n + '"' + (n === S.count ? ' selected' : '') + '>对比 ' + n + ' 把武器</option>';
-    }
+  function viewSegHtml() {
     var seg = '';
     for (var v = 0; v < VIEWS.length; v++) {
       seg += '<button type="button" class="pldc-segbtn' + (S.view === VIEWS[v].key ? ' is-on' : '') +
         '" data-view="' + VIEWS[v].key + '">' + VIEWS[v].label + '</button>';
     }
+    return '<span class="pldc-seg">' + seg + '</span>';
+  }
+
+  function toolbarHtml() {
+    var cnt = '';
+    for (var n = 1; n <= 4; n++) {
+      cnt += '<option value="' + n + '"' + (n === S.count ? ' selected' : '') + '>对比 ' + n + ' 把武器</option>';
+    }
     return '<label class="pldc-field">' +
-      '<span>表格版本</span><span class="pldc-hint" data-hint="基础版只留常用参数与最终结果；详细版把主属性系数、优劣比例、面板上下限、期望值与单次伤害一并摊开。' +
-      '切换不影响已填数值，分享链接会记住当前版本。" tabindex="0" role="note">?</span>' +
-      '<span class="pldc-seg">' + seg + '</span></label>' +
+      '<span>表格版本</span><span class="pldc-hint" data-hint="详细版可以修改武器系数等固定参数，推荐绝大部分玩家使用基础版，两版计算逻辑一致" tabindex="0" role="note">?</span>' +
+      viewSegHtml() + '</label>' +
       '<label class="pldc-field">' +
       '<span>对比武器数量</span><span class="pldc-hint" data-hint="选择同时对比几把武器（1 ~ 4），下面的卡片与表格列数会跟着变。' +
       '隐藏起来的列数据仍保留在本机，改回 4 把就会恢复。" tabindex="0" role="note">?</span>' +
@@ -709,8 +718,8 @@
 
   // 只切 class，不重建 DOM，输入焦点与滚动位置都不会丢
   function applyView() {
-    var table = root.querySelector('table.pldc-table');
-    if (table) table.classList.toggle('pldc-basic', S.view === 'basic');
+    var tables = root.querySelectorAll('table.pldc-table');
+    for (var t = 0; t < tables.length; t++) tables[t].classList.toggle('pldc-basic', S.view === 'basic');
     var btns = root.querySelectorAll('[data-view]');
     for (var i = 0; i < btns.length; i++) {
       btns[i].classList.toggle('is-on', btns[i].getAttribute('data-view') === S.view);
@@ -757,13 +766,13 @@
       for (var q = 0; q < RESULTS.length; q++) if (RESULTS[q].key === key) spec = RESULTS[q];
       if (!spec) continue;
       setText(cell, fmtNum(res[col][key], spec.dec));
-      cell.classList.toggle('pldc-best', key === 'dpm' && col === bestIdx && best > 0);
+      cell.classList.toggle('pldc-best', key === 'dpm' && res[col].dpm === best && best > 0);
     }
 
     var cards = [];
     for (var c = 0; c < res.length; c++) {
       var r = res[c];
-      var isBest = c === bestIdx && best > 0;
+      var isBest = r.dpm === best && best > 0;
       var delta = best > 0 && r.dpm > 0 && r.dpm < best ? '−' + fmtNum((1 - r.dpm / best) * 100, 1) + '%' : '';
       cards.push('<div class="pldc-card' + (isBest ? ' pldc-card-best' : '') + '">' +
         '<div class="pldc-card-top"><span class="pldc-card-name">' + esc(S.columns[c].name) + '</span>' +
@@ -1020,6 +1029,17 @@
       var url = location.origin + location.pathname + hash;
       if (history.replaceState) history.replaceState(null, '', hash);
       copyText(url);
+      return;
+    }
+    if (act === 'reset-convert') {
+      if (!confirm('把攻力敏换算恢复默认数值？（不影响环破伤害计算页）')) return;
+      S.convert = [];
+      for (var ci = 0; ci < 4; ci++) S.convert.push(clone(CONVERT_BASE[ci]));
+      rebuild();
+      refreshConvert();
+      saveState();
+      setTab('convert');
+      toast('攻力敏换算已恢复默认');
       return;
     }
     if (act === 'reset') {

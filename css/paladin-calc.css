@@ -576,6 +576,33 @@
 
 .pldc .pldc-guide .pldc-detail { color: #8a7bd8; border-color: #b9aee8; }
 
+/* ---------------- 攻力敏换算 ---------------- */
+
+.pldc .pldc-convert-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+}
+
+.pldc .pldc-convert-tip {
+  font-size: 12px;
+  color: var(--pldc-muted);
+  line-height: 1.5;
+}
+
+.pldc .pldc-convert-seg .pldc-segbtn { padding: 3px 10px; font-size: 12px; }
+
+/* 固定的表头名称（不可编辑） */
+.pldc .pldc-table thead .pldc-colhead-fixed {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: .2px;
+  padding: 8px 6px !important;
+  white-space: nowrap;
+}
+
 /* ---------------- 提示条 ---------------- */
 
 .pldc-toast {
